@@ -25,7 +25,7 @@ var _ = Describe("server", func() {
 	BeforeEach(func() {
 		mockChecker = &mockhealth.Checker{}
 		w = httptest.NewRecorder()
-		l := log.NewLogger(&log.Configuration{LogLevel: "fatal", HumanFrendly: true})
+		l := log.NewLogger(log.TestConfig)
 		s = NewServer(&Configuration{ServerDebug: false}, WithLogger(l), WithHealthCheck(mockChecker))
 	})
 	JustBeforeEach(func() {
@@ -104,7 +104,7 @@ var _ = Describe("server", func() {
 	})
 	Context("api routes", func() {
 		BeforeEach(func() {
-			s.ApiRoutes().GET("/test", serviceRoute())
+			s.APIRoutes().GET("/test", serviceRoute())
 			req = httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 		})
 		It("returns ok", func() {

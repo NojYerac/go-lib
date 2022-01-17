@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 type Configuration struct {
@@ -19,7 +20,7 @@ type Configuration struct {
 	ConfigPath      string `config:"config_dir" flag:"configs,c" validate:"dir"`
 }
 
-type ConfigLoader interface {
+type Loader interface {
 	RegisterConfig(interface{}) error
 	InitAndValidate() error
 }
@@ -30,7 +31,7 @@ func WithArgs(args ...string) Option {
 	}
 }
 
-func WithLogger(l zerolog.Logger) Option {
+func WithLogger(l *zerolog.Logger) Option {
 	return func(cl *configLoader) {
 		cl.logger = l
 	}
@@ -38,10 +39,10 @@ func WithLogger(l zerolog.Logger) Option {
 
 type Option func(*configLoader)
 
-func NewConfigLoader(prefix string, opts ...Option) ConfigLoader {
+func NewConfigLoader(prefix string, opts ...Option) Loader {
 	cl := &configLoader{
 		v:      viper.New(),
-		logger: zerolog.New(os.Stdout).Level(zerolog.InfoLevel),
+		logger: log.NewLogger(&log.Configuration{HumanFrendly: true, LogLevel: "fatal"}),
 	}
 	for _, o := range opts {
 		o(cl)
@@ -60,7 +61,7 @@ func NewConfigLoader(prefix string, opts ...Option) ConfigLoader {
 type configLoader struct {
 	v       *viper.Viper
 	configs []interface{}
-	logger  zerolog.Logger
+	logger  *zerolog.Logger
 	c       *Configuration
 }
 
@@ -150,34 +151,42 @@ func (c *configLoader) unmarshal(dest interface{}) error {
 }
 
 func (c *configLoader) InitAndValidate() (err error) {
-	validate := validator.New()
 	pflag.Parse()
 	if err = c.unmarshal(c.c); err != nil {
 		return
 	}
-
-	configFiles, err := os.ReadDir(c.c.ConfigPath)
-	if err != nil {
-		return
-	}
-	for _, fileInfo := range configFiles {
-		if strings.Contains(fileInfo.Name(), "config.") {
-			c.v.SetConfigFile(filepath.Join(c.c.ConfigPath, fileInfo.Name()))
-			if err = c.v.MergeInConfig(); err != nil {
-				return
-			}
-		}
-	}
-	for _, conf := range c.configs {
-		if err = c.unmarshal(conf); err == nil {
-			if err = validate.Struct(conf); err == nil {
-				continue
-			}
-		}
+	if err = c.load(); err != nil {
 		return
 	}
 	if c.v.GetBool("log_config_on_init") {
 		c.logger.Info().Interface("config", c.v.AllSettings()).Msg("config loaded")
 	}
 	return
+}
+
+func (c *configLoader) load() error {
+	validate := validator.New()
+
+	configFiles, err := os.ReadDir(c.c.ConfigPath)
+	if err != nil {
+		return err
+	}
+	for _, fileInfo := range configFiles {
+		if strings.Contains(fileInfo.Name(), "config.") {
+			c.v.SetConfigFile(filepath.Join(c.c.ConfigPath, fileInfo.Name()))
+			if mergeErr := c.v.MergeInConfig(); mergeErr != nil {
+				return mergeErr
+			}
+		}
+	}
+
+	for _, conf := range c.configs {
+		if err = c.unmarshal(conf); err == nil {
+			if err = validate.Struct(conf); err == nil {
+				continue
+			}
+		}
+		return err
+	}
+	return nil
 }

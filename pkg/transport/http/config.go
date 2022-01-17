@@ -21,12 +21,12 @@ func NewConfiguration() *Configuration {
 type Option func(*options)
 
 type options struct {
-	logger        zerolog.Logger
+	logger        *zerolog.Logger
 	middleware    []gin.HandlerFunc
 	healthChecker health.Checker
 }
 
-func WithLogger(l zerolog.Logger) Option {
+func WithLogger(l *zerolog.Logger) Option {
 	return func(o *options) {
 		o.logger = l
 		o.middleware = append(o.middleware, logger.SetLogger(

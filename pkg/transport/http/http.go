@@ -6,14 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog"
 	"source.rad.af/libs/go-lib/pkg/health"
+	"source.rad.af/libs/go-lib/pkg/log"
 	"source.rad.af/libs/go-lib/pkg/version"
 )
 
 type Server interface {
 	Listen(net.Listener) error
-	ApiRoutes() gin.IRouter
+	APIRoutes() gin.IRouter
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
@@ -27,7 +27,7 @@ func (s *server) Listen(l net.Listener) error {
 	return s.engine.RunListener(l)
 }
 
-func (s *server) ApiRoutes() gin.IRouter {
+func (s *server) APIRoutes() gin.IRouter {
 	return s.apiRoutes
 }
 
@@ -37,7 +37,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func NewServer(config *Configuration, opts ...Option) Server {
 	o := &options{
-		logger: zerolog.Nop(),
+		logger: log.Nop(),
 	}
 	for _, applyOpt := range opts {
 		applyOpt(o)

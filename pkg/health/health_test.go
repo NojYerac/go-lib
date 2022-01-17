@@ -19,20 +19,22 @@ var _ = Describe("health", func() {
 		healthChecker Checker
 		ctx           context.Context
 		cancel        context.CancelFunc
-		ready         chan struct{}
+		// ready         chan struct{}
 	)
 	BeforeEach(func() {
-		ready = make(chan struct{})
-		l := log.NewLogger(&log.Configuration{HumanFrendly: true, LogLevel: "fatal"})
+		// ready = make(chan struct{})
+		l := log.NewLogger(log.TestConfig)
 		ctx, cancel = context.WithCancel(l.WithContext(context.Background()))
-		healthChecker = NewChecker(&Configuration{CheckInterval: 10 * time.Millisecond}, WithReadyChan(ready))
+		c := NewConfiguration()
+		c.CheckInterval = 10 * time.Millisecond
+		healthChecker = NewChecker(c)
 	})
 	JustBeforeEach(func() {
 		go func() {
 			defer GinkgoRecover()
 			Expect(healthChecker.Start(ctx)).To(MatchError(context.Canceled))
 		}()
-		<-ready
+		// <-ready
 	})
 	AfterEach(func() {
 		cancel()
