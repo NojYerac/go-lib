@@ -1,21 +1,19 @@
 package config_test
 
 import (
-	"os"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rs/zerolog"
 	. "source.rad.af/libs/go-lib/pkg/config"
+	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 var _ = Describe("ConfigLoader", func() {
 	var (
-		c   ConfigLoader
+		c   Loader
 		err error
 	)
 	BeforeEach(func() {
-		l := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).Level(zerolog.FatalLevel)
+		l := log.NewLogger(&log.Configuration{HumanFrendly: true, LogLevel: "fatal"})
 		c = NewConfigLoader("test", WithLogger(l), WithArgs("-c", "./testdata"))
 	})
 	It("is testable", func() {

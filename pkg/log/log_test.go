@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("log", func() {
 	var (
-		l zerolog.Logger
+		l *zerolog.Logger
 		b *bytes.Buffer
 	)
 	BeforeEach(func() {

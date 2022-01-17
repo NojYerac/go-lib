@@ -1,0 +1,21 @@
+---
+stages:
+  - test
+
+ginkgo:
+  stage: test
+  image: $CI_REGISTRY/infra/go-builder:latest
+  script:
+    - ACK_GINKGO_DEPRECATIONS=1.16.5 ginkgo -r -cover
+    - mkdir -p reports && find . -type f -regex '.*\(report.xml\|coverprofile\)$' | while read fn; do mv $fn reports/$(echo $fn | sed -e 's#^\./##' -e 's#/#-#g'); done
+  artifacts:
+    paths:
+      - reports/*.coverprofile
+    reports:
+      junit: reports/*report.xml
+
+lint:
+  stage: test
+  image: $CI_REGISTRY/infra/go-builder:latest
+  script:
+    - golangci-lint run -c .golangci.yml --timeout 10m0s

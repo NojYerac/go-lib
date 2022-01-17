@@ -31,7 +31,7 @@ var _ = Describe("Database", func() {
 		config := NewConfiguration()
 		config.Driver = "sqlmock"
 		config.DBConnStr = "testDB"
-		l := log.NewLogger(&log.Configuration{HumanFrendly: true, LogLevel: "trace"})
+		l := log.NewLogger(log.TestConfig)
 		opCtx = l.WithContext(ctx)
 
 		sqlMock.ExpectPing()
