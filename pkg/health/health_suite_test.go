@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 )
 
 func TestHealth(t *testing.T) {
+	r := reporters.NewJUnitReporter("report.xml")
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Health Suite")
+	RunSpecsWithDefaultAndCustomReporters(t, "Health Suite", []Reporter{r})
 }

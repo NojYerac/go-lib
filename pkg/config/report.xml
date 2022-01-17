@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite name="Config Suite" tests="5" failures="5" errors="0" time="0.002">
-      <testcase name="Config Config files with a single file returns the original value" classname="Config Suite" time="0.000500132">
-          <failure type="Failure">/home/yerac/radaf/go-lib/pkg/config/config_test.go:51&#xA;Expected&#xA;    &lt;string&gt;: &#xA;to equal&#xA;    &lt;string&gt;: original&#xA;/home/yerac/radaf/go-lib/pkg/config/config_test.go:52</failure>
-      </testcase>
-      <testcase name="Config Config files with multiple file returns the overridden value" classname="Config Suite" time="0.00027532">
-          <failure type="Failure">/home/yerac/radaf/go-lib/pkg/config/config_test.go:60&#xA;Expected&#xA;    &lt;string&gt;: &#xA;to equal&#xA;    &lt;string&gt;: override&#xA;/home/yerac/radaf/go-lib/pkg/config/config_test.go:61</failure>
-      </testcase>
-      <testcase name="Config Config Vars when no value is set should return the default value" classname="Config Suite" time="0.000329198">
-          <failure type="Failure">/home/yerac/radaf/go-lib/pkg/config/config_test.go:72&#xA;Unexpected error:&#xA;    &lt;*fs.PathError | 0xc00007f560&gt;: {&#xA;        Op: &#34;open&#34;,&#xA;        Path: &#34;configs/config.yml&#34;,&#xA;        Err: &lt;syscall.Errno&gt;0x2,&#xA;    }&#xA;    open configs/config.yml: no such file or directory&#xA;occurred&#xA;/home/yerac/radaf/go-lib/pkg/config/config_test.go:73</failure>
-      </testcase>
-      <testcase name="Config Config Vars when an environment variable is set should return the value" classname="Config Suite" time="0.000315953">
-          <failure type="Failure">/home/yerac/radaf/go-lib/pkg/config/config_test.go:81&#xA;Unexpected error:&#xA;    &lt;*fs.PathError | 0xc00007fd10&gt;: {&#xA;        Op: &#34;open&#34;,&#xA;        Path: &#34;configs/config.yml&#34;,&#xA;        Err: &lt;syscall.Errno&gt;0x2,&#xA;    }&#xA;    open configs/config.yml: no such file or directory&#xA;occurred&#xA;/home/yerac/radaf/go-lib/pkg/config/config_test.go:82</failure>
-      </testcase>
-      <testcase name="Config Config Vars when a flag is set should return the value" classname="Config Suite" time="0.000302948">
-          <failure type="Failure">/home/yerac/radaf/go-lib/pkg/config/config_test.go:93&#xA;Unexpected error:&#xA;    &lt;*fs.PathError | 0xc00047a540&gt;: {&#xA;        Op: &#34;open&#34;,&#xA;        Path: &#34;./configs/config.yml&#34;,&#xA;        Err: &lt;syscall.Errno&gt;0x2,&#xA;    }&#xA;    open ./configs/config.yml: no such file or directory&#xA;occurred&#xA;/home/yerac/radaf/go-lib/pkg/config/config_test.go:94</failure>
-      </testcase>
+  <testsuite name="Config Suite" tests="1" failures="0" errors="0" time="0">
+      <testcase name="ConfigLoader is testable" classname="Config Suite" time="0.000543145"></testcase>
   </testsuite>
