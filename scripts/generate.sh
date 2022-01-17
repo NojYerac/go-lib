@@ -14,6 +14,6 @@ catch () {
 project_root=$(cd $(dirname $0)../ >/dev/null 2>&1; pwd)
 
 mock_dir=${project_root}/internal/mocks
-mockery --dir ${project_root}/pkg --recursive --keeptree --output ${mock_dir} --name '^Server$|^Client$|Database|Tx|Checker'
+mockery --dir ${project_root}/pkg --recursive --keeptree --output ${mock_dir} --name '^(Server|Client|Database|Tx|Checker)$'
 
 echo "Generated mocks"
