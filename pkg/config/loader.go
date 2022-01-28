@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
@@ -15,29 +15,10 @@ import (
 	"source.rad.af/libs/go-lib/pkg/log"
 )
 
-type Configuration struct {
-	LogConfigOnInit bool   `config:"log_config_on_init"`
-	ConfigPath      string `config:"config_dir" flag:"configs,c" validate:"dir"`
-}
-
 type Loader interface {
 	RegisterConfig(interface{}) error
 	InitAndValidate() error
 }
-
-func WithArgs(args ...string) Option {
-	return func(cl *configLoader) {
-		os.Args = append([]string{os.Args[0]}, args...)
-	}
-}
-
-func WithLogger(l *zerolog.Logger) Option {
-	return func(cl *configLoader) {
-		cl.logger = l
-	}
-}
-
-type Option func(*configLoader)
 
 func NewConfigLoader(prefix string, opts ...Option) Loader {
 	cl := &configLoader{
@@ -117,39 +98,6 @@ func (c *configLoader) RegisterConfig(conf interface{}) error {
 	return nil
 }
 
-func NewFlagValue(rv reflect.Value) pflag.Value {
-	return &flagValue{
-		rv:  rv,
-		str: fmt.Sprintf("%v", rv.Interface()),
-	}
-}
-
-type flagValue struct {
-	rv  reflect.Value
-	str string
-}
-
-func (v *flagValue) String() string {
-	return v.str
-}
-
-func (v *flagValue) Set(val string) error {
-	v.str = val
-	return nil
-}
-
-func (v *flagValue) Type() string {
-	return v.rv.Type().String()
-}
-
-func withTagName(tn string) viper.DecoderConfigOption {
-	return func(dc *mapstructure.DecoderConfig) { dc.TagName = tn }
-}
-
-func (c *configLoader) unmarshal(dest interface{}) error {
-	return c.v.Unmarshal(dest, withTagName("config"))
-}
-
 func (c *configLoader) InitAndValidate() (err error) {
 	pflag.Parse()
 	if err = c.unmarshal(c.c); err != nil {
@@ -166,6 +114,11 @@ func (c *configLoader) InitAndValidate() (err error) {
 
 func (c *configLoader) load() error {
 	validate := validator.New()
+	for tag, v := range customValidators {
+		if err := validate.RegisterValidation(tag, v); err != nil {
+			return err
+		}
+	}
 
 	configFiles, err := os.ReadDir(c.c.ConfigPath)
 	if err != nil {
@@ -189,4 +142,12 @@ func (c *configLoader) load() error {
 		return err
 	}
 	return nil
+}
+
+func withTagName(tn string) viper.DecoderConfigOption {
+	return func(dc *mapstructure.DecoderConfig) { dc.TagName = tn }
+}
+
+func (c *configLoader) unmarshal(dest interface{}) error {
+	return c.v.Unmarshal(dest, withTagName("config"))
 }
