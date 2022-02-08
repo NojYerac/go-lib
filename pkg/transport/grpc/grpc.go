@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 
 	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
@@ -14,7 +13,7 @@ import (
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -28,11 +27,8 @@ func ClientConn(
 	opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	initialize()
 	if len(opts) < 1 {
-		cred := credentials.NewTLS(&tls.Config{
-			InsecureSkipVerify: true, // nolint:gosec // internal only
-		})
 		opts = []grpc.DialOption{
-			grpc.WithTransportCredentials(cred),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithBlock(),
 		}
 	}
@@ -76,7 +72,7 @@ func initialize() {
 		return
 	}
 	if grpcLogger == nil {
-		grpcLogger = zerolog.DefaultContextLogger
+		grpcLogger = zerolog.Ctx(context.Background())
 	}
 	replaceGRPCLogger(grpcLogger)
 	ini = true
