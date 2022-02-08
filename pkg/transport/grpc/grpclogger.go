@@ -8,8 +8,10 @@ import (
 )
 
 func replaceGRPCLogger(l *zerolog.Logger) {
-	gl := &grpcV2Logger{*l}
-	grpclog.SetLoggerV2(gl)
+	if l != nil {
+		gl := &grpcV2Logger{*l}
+		grpclog.SetLoggerV2(gl)
+	}
 }
 
 var _ grpclog.LoggerV2 = &grpcV2Logger{}
