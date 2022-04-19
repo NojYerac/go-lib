@@ -17,7 +17,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.17.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/zerolog v1.26.1
@@ -25,6 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.28.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.28.0
 	go.opentelemetry.io/otel v1.3.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.3.0

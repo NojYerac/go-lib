@@ -23,7 +23,7 @@ type Loader interface {
 func NewConfigLoader(prefix string, opts ...Option) Loader {
 	cl := &configLoader{
 		v:      viper.New(),
-		logger: log.NewLogger(&log.Configuration{HumanFrendly: true, LogLevel: "fatal"}),
+		logger: log.Nop(),
 	}
 	for _, o := range opts {
 		o(cl)
@@ -34,7 +34,7 @@ func NewConfigLoader(prefix string, opts ...Option) Loader {
 	}
 
 	if err := cl.RegisterConfig(cl.c); err != nil {
-		cl.logger.Panic().Err(err).Msg("")
+		panic(err)
 	}
 	return cl
 }
@@ -114,6 +114,13 @@ func (c *configLoader) InitAndValidate() (err error) {
 
 func (c *configLoader) load() error {
 	validate := validator.New()
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("config"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
 	for tag, v := range customValidators {
 		if err := validate.RegisterValidation(tag, v); err != nil {
 			return err

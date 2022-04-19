@@ -6,7 +6,7 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "source.rad.af/libs/go-lib/pkg/db"
 	"source.rad.af/libs/go-lib/pkg/log"

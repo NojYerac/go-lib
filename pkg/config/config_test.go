@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "source.rad.af/libs/go-lib/pkg/config"
 	"source.rad.af/libs/go-lib/pkg/log"

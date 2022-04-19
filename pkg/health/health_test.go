@@ -5,18 +5,18 @@ import (
 	"errors"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "source.rad.af/libs/go-lib/pkg/health"
+	"source.rad.af/libs/go-lib/pkg/health"
 	"source.rad.af/libs/go-lib/pkg/log"
 )
 
-var passingChecker CheckFn = func(c context.Context) error { return nil }
-var failingChecker CheckFn = func(c context.Context) error { return errors.New("mock error") }
+var passingChecker health.CheckFn = func(c context.Context) error { return nil }
+var failingChecker health.CheckFn = func(c context.Context) error { return errors.New("mock error") }
 
 var _ = Describe("health", func() {
 	var (
-		healthChecker Checker
+		healthChecker health.Checker
 		ctx           context.Context
 		cancel        context.CancelFunc
 		// ready         chan struct{}
@@ -25,9 +25,9 @@ var _ = Describe("health", func() {
 		// ready = make(chan struct{})
 		l := log.NewLogger(log.TestConfig)
 		ctx, cancel = context.WithCancel(l.WithContext(context.Background()))
-		c := NewConfiguration()
+		c := health.NewConfiguration()
 		c.CheckInterval = 10 * time.Millisecond
-		healthChecker = NewChecker(c)
+		healthChecker = health.NewChecker(c)
 	})
 	JustBeforeEach(func() {
 		go func() {
