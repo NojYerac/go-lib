@@ -7,7 +7,7 @@ import (
 	nethttp "net/http"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -36,7 +36,7 @@ var _ = Describe("transport", func() {
 			RootCA:   "testdata/ca.crt",
 		}
 		ctx, cancel = context.WithCancel(context.Background())
-		ctx = log.NewLogger(log.DebugConfig).WithContext(ctx)
+		ctx = log.NewLogger(log.TestConfig).WithContext(ctx)
 
 		s, err = NewServer(config)
 	})

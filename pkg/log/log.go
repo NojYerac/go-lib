@@ -1,6 +1,7 @@
 package log
 
 import (
+	"log"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -36,4 +37,5 @@ func Nop() *zerolog.Logger {
 
 func SetDefaultCtxLogger(l *zerolog.Logger) {
 	zerolog.DefaultContextLogger = l
+	log.SetOutput(l)
 }

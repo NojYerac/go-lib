@@ -6,13 +6,12 @@ ginkgo:
   stage: test
   image: $CI_REGISTRY/infra/go-builder:latest
   script:
-    - ACK_GINKGO_DEPRECATIONS=1.16.5 ginkgo -r -cover
-    - mkdir -p reports && find . -type f -regex '.*\(report.xml\|coverprofile\)$' | while read fn; do mv $fn reports/$(echo $fn | sed -e 's#^\./##' -e 's#/#-#g'); done
+    - ginkgo -r --output-dir reports  --coverprofile coverprofile --junit-report report.xml
   artifacts:
     paths:
-      - reports/*.coverprofile
+      - reports/coverprofile
     reports:
-      junit: reports/*report.xml
+      junit: reports/report.xml
 
 lint:
   stage: test
