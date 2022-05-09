@@ -60,8 +60,6 @@ func tlsConfig(config *Configuration) (*tls.Config, error) {
 
 type Server interface {
 	Start(context.Context) error
-	ServeHTTP(libhttp.Server)
-	ServeGRPC(*grpc.Server)
 }
 
 type server struct {
@@ -70,7 +68,7 @@ type server struct {
 	listener   net.Listener
 }
 
-func NewServer(config *Configuration) (Server, error) {
+func NewTLSServer(config *Configuration, opts ...Option) (Server, error) {
 	conf, err := tlsConfig(config)
 	if err != nil {
 		return nil, err
@@ -80,17 +78,27 @@ func NewServer(config *Configuration) (Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &server{
+	s := &server{
 		listener: listener,
-	}, nil
+	}
+	for _, applyOpt := range opts {
+		applyOpt(s)
+	}
+	return s, nil
 }
 
-func (s *server) ServeHTTP(h libhttp.Server) {
-	s.httpServer = h
+type Option func(s *server)
+
+func WithHTTP(h libhttp.Server) Option {
+	return func(s *server) {
+		s.httpServer = h
+	}
 }
 
-func (s *server) ServeGRPC(g *grpc.Server) {
-	s.grpcServer = g
+func WithGRPC(g *grpc.Server) Option {
+	return func(s *server) {
+		s.grpcServer = g
+	}
 }
 
 // Start starts the server and blocks until the context is canceled

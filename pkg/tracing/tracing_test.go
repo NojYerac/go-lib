@@ -54,7 +54,8 @@ var _ = Describe("tracing", func() {
 		})
 		It("returns a stdout trace provider", func() {
 			Expect(tp).NotTo(BeNil())
-			tracer := tp.Tracer("test")
+			SetGlobal(tp)
+			tracer := TracerForPackage(0)
 			c1, serverSpan := tracer.Start(context.Background(), "test_span", trace.WithSpanKind(trace.SpanKindServer))
 			serverSpan.AddEvent("test event", trace.WithAttributes(attribute.String("testEventAttrKey", "testEventAttrVal")))
 			serverSpan.SetStatus(codes.Ok, "test status")
@@ -70,7 +71,10 @@ var _ = Describe("tracing", func() {
 			traces := strings.Split(strings.Trim(string(content), "\n"), "\n")
 			Expect(traces).To(HaveLen(3))
 			for _, t := range traces {
-				Expect(t).To(ContainSubstring(`"Resource":[{"Key":"service.name","Value":{"Type":"STRING","Value":""}},`))
+				Expect(t).To(And(
+					ContainSubstring(`"Resource":[{"Key":"service.name","Value":{"Type":"STRING","Value":""}},`),
+					ContainSubstring(`"InstrumentationLibrary":{"Name":"source.rad.af/libs/go-lib/pkg/tracing_test"`),
+				))
 			}
 		})
 	})

@@ -37,10 +37,9 @@ var _ = Describe("transport", func() {
 		}
 		ctx, cancel = context.WithCancel(context.Background())
 		ctx = log.NewLogger(log.TestConfig).WithContext(ctx)
-
-		s, err = NewServer(config)
 	})
 	JustBeforeEach(func() {
+		s, err = NewTLSServer(config, WithHTTP(h), WithGRPC(g))
 		Expect(err).NotTo(HaveOccurred())
 
 		go func() {
@@ -58,7 +57,6 @@ var _ = Describe("transport", func() {
 	Context("httpServer", func() {
 		BeforeEach(func() {
 			h = http.NewServer(&http.Configuration{})
-			s.ServeHTTP(h)
 		})
 		It("routes to httpServer", func() {
 			req, err := nethttp.NewRequest("GET", "https://localhost:8443/ping", nethttp.NoBody)
@@ -82,7 +80,6 @@ var _ = Describe("transport", func() {
 		BeforeEach(func() {
 			g = grpc.NewServer()
 			pb.RegisterEchoServer(g, &echoSrv{})
-			s.ServeGRPC(g)
 		})
 		It("routes grpc requests", func() {
 			cc, err := grpc.Dial("localhost:8443", grpc.WithTransportCredentials(

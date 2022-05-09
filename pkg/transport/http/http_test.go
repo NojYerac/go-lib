@@ -3,16 +3,31 @@ package http_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/metric"
 	mockhealth "source.rad.af/libs/go-lib/internal/mocks/health"
 	"source.rad.af/libs/go-lib/pkg/log"
+	"source.rad.af/libs/go-lib/pkg/metrics"
+	"source.rad.af/libs/go-lib/pkg/tracing"
 	. "source.rad.af/libs/go-lib/pkg/transport/http"
 	"source.rad.af/libs/go-lib/pkg/version"
 )
+
+var metricHandler http.HandlerFunc
+var _ = BeforeSuite(func() {
+	version.SetServiceName("test")
+	var m metric.MeterProvider
+	m, metricHandler, _ = metrics.NewMeterProvider(nil)
+	metrics.SetGlobal(m)
+	tracing.SetGlobal(tracing.NewTracerProvider(&tracing.Configuration{
+		ExporterType: "noop",
+	}))
+})
 
 var _ = Describe("server", func() {
 	var (
@@ -26,7 +41,15 @@ var _ = Describe("server", func() {
 		mockChecker = &mockhealth.Checker{}
 		w = httptest.NewRecorder()
 		l := log.NewLogger(log.TestConfig)
-		s = NewServer(&Configuration{ServerDebug: false}, WithLogger(l), WithHealthCheck(mockChecker))
+		s = NewServer(
+			&Configuration{ServerDebug: false},
+			WithLogger(l),
+			WithHealthCheck(mockChecker),
+			WithMetricHandler(metricHandler),
+		)
+		s.APIRoutes().GET("/ok", serviceRoute())
+		s.APIRoutes().GET("/err", serviceRoute())
+		s.APIRoutes().GET("/panic", serviceRoute())
 	})
 	JustBeforeEach(func() {
 		s.ServeHTTP(w, req)
@@ -90,7 +113,6 @@ var _ = Describe("server", func() {
 		})
 		Describe("GET /version", func() {
 			BeforeEach(func() {
-				version.SetServiceName("test")
 				req = httptest.NewRequest(http.MethodGet, "/version", http.NoBody)
 			})
 			It("returns the version", func() {
@@ -101,15 +123,45 @@ var _ = Describe("server", func() {
 				))
 			})
 		})
+		Describe("GET /metrics", func() {
+			BeforeEach(func() {
+				s.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/api/ok", http.NoBody))
+				time.Sleep(100 * time.Millisecond)
+				req = httptest.NewRequest(http.MethodGet, "/metrics", http.NoBody)
+			})
+			It("returns the metrics", func() {
+				Expect(w.Code).To(Equal(http.StatusOK))
+				Expect(body).To(ContainSubstring("http_request_duration_histogram"))
+			})
+		})
 	})
 	Context("api routes", func() {
-		BeforeEach(func() {
-			s.APIRoutes().GET("/test", serviceRoute())
-			req = httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
+		When("handler succeeds", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/api/ok", http.NoBody)
+			})
+			It("returns ok", func() {
+				Expect(w.Code).To(Equal(http.StatusOK))
+				Expect(body).To(Equal("OK"))
+			})
 		})
-		It("returns ok", func() {
-			Expect(w.Code).To(Equal(http.StatusOK))
-			Expect(body).To(Equal("OK"))
+		When("handler errors", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/api/err", http.NoBody)
+			})
+			It("returns error", func() {
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+				Expect(body).To(Equal("error"))
+			})
+		})
+		When("handler panics", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/api/panic", http.NoBody)
+			})
+			It("returns error", func() {
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+				Expect(body).To(Equal("[PANIC RECOVER] mock panic"))
+			})
 		})
 	})
 })
@@ -119,7 +171,13 @@ func serviceRoute() gin.HandlerFunc {
 		ctx := c.Request.Context()
 		logger := zerolog.Ctx(ctx)
 		logger.Debug().Msg("service route")
-
-		c.String(http.StatusOK, "OK")
+		switch c.FullPath() {
+		case "/api/err":
+			c.String(http.StatusInternalServerError, "error")
+		case "/api/panic":
+			panic("mock panic")
+		default:
+			c.String(http.StatusOK, "OK")
+		}
 	}
 }

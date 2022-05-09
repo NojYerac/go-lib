@@ -6,14 +6,17 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" // blank import to allow postgres driver
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"source.rad.af/libs/go-lib/pkg/log"
+	"source.rad.af/libs/go-lib/pkg/tracing"
 )
 
 func NewDatabase(config *Configuration, opts ...Option) Database {
 	o := &options{
 		l: log.Nop(),
+		t: tracing.TracerForPackage(),
 	}
 	for _, applyOpt := range opts {
 		applyOpt(o)
@@ -50,7 +53,7 @@ func (db *database) Open(ctx context.Context) error {
 	}
 	db.conn = conn
 	db.data = &data{eq: conn, o: db.o}
-	return nil
+	return initMetrics(db)
 }
 
 // Close releases the connection
@@ -60,17 +63,20 @@ func (db *database) Close() error {
 }
 
 // Begin starts a transaction
-func (db *database) Begin(ctx context.Context) (Tx, error) {
+func (db *database) Begin(parentCtx context.Context) (txx Tx, err error) {
+	ctx, deferFunc := db.start(parentCtx, "Begin", "", nil, nil)
+	defer deferFunc(err)
 	db.o.l.Trace().Msg("begin transaction")
 	tx, err := db.conn.BeginTxx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return &transaction{
+	txx = &transaction{
 		data: &data{eq: tx, o: db.o},
 		tx:   tx,
 		o:    db.o,
-	}, nil
+	}
+	return
 }
 
 // DataInterface is the interface for issuing SQL commands to a database
@@ -91,60 +97,82 @@ type data struct {
 	o  *options
 }
 
-func (d *data) Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+func (d *data) start(
+	parentCtx context.Context,
+	op, query string,
+	args []interface{},
+	dest interface{},
+) (ctx context.Context, deferFunc func(error)) {
+	logger := zerolog.Ctx(parentCtx)
+	ctx, span := d.o.t.Start(parentCtx, op)
 	start := time.Now()
-	err := sqlx.SelectContext(ctx, d.eq, dest, query, args...)
-	d.o.l.Trace().
-		Err(err).
-		Str("sql", query).
-		Interface("args", args).
-		Interface("dest", dest).
-		Dur("latentcy", time.Since(start)).
-		Msg("select")
+	deferFunc = func(err error) {
+		latentcy := time.Since(start)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+		durationHistogram.Record(ctx, latentcy.Milliseconds(), semconv.DBOperationKey.String(op))
+		logger.Err(err).
+			Str("sql", query).
+			Interface("arguments", args).
+			Interface("result", dest).
+			Dur("latentcy", latentcy).
+			Msg(op)
+	}
+	return
+}
+
+func (d *data) Select(
+	parentCtx context.Context,
+	dest interface{},
+	query string,
+	args ...interface{},
+) (err error) {
+	ctx, deferFunc := d.start(parentCtx, "Select", query, args, dest)
+	defer deferFunc(err)
+	err = sqlx.SelectContext(ctx, d.eq, dest, query, args...)
 	return err
 }
 
-func (d *data) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	start := time.Now()
-	err := sqlx.GetContext(ctx, d.eq, dest, query, args...)
-	d.o.l.Trace().
-		Err(err).
-		Str("sql", query).
-		Interface("args", args).
-		Interface("dest", dest).
-		Dur("latentcy", time.Since(start)).
-		Msg("get")
+func (d *data) Get(
+	parentCtx context.Context,
+	dest interface{},
+	query string,
+	args ...interface{},
+) (err error) {
+	ctx, deferFunc := d.start(parentCtx, "Get", query, args, dest)
+	defer deferFunc(err)
+	err = sqlx.GetContext(ctx, d.eq, dest, query, args...)
 	return err
 }
 
-func (d *data) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	start := time.Now()
-	res, err := d.eq.ExecContext(ctx, query, args...)
-	d.o.l.Trace().
-		Err(err).
-		Str("sql", query).
-		Interface("args", args).
-		Dur("latentcy", time.Since(start)).
-		Msg("exec")
-	return res, err
+func (d *data) Exec(
+	parentCtx context.Context,
+	query string,
+	args ...interface{},
+) (res sql.Result, err error) {
+	ctx, deferFunc := d.start(parentCtx, "Exec", query, args, res)
+	defer deferFunc(err)
+	res, err = d.eq.ExecContext(ctx, query, args...)
+	return
 }
-func (d *data) Query(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error) {
-	var _ = zerolog.DurationFieldUnit
-	start := time.Now()
-	rows, err := d.eq.QueryxContext(ctx, query, args...)
-	d.o.l.Trace().
-		Err(err).
-		Str("sql", query).
-		Interface("args", args).
-		Dur("latentcy", time.Since(start)).
-		Msg("query")
-	return rows, err
+
+func (d *data) Query(
+	parentCtx context.Context,
+	query string,
+	args ...interface{},
+) (rows *sqlx.Rows, err error) {
+	ctx, deferFunc := d.start(parentCtx, "Query", query, args, rows)
+	defer deferFunc(err)
+	rows, err = d.eq.QueryxContext(ctx, query, args...)
+	return
 }
 
 // Tx is the interface for managing a transaction
 type Tx interface {
-	Commit() error
-	Rollback() error
+	Commit(context.Context) error
+	Rollback(context.Context) error
 	DataInterface
 }
 
@@ -154,12 +182,16 @@ type transaction struct {
 	o  *options
 }
 
-func (t *transaction) Commit() error {
-	t.o.l.Trace().Msg("commit operation")
-	return t.tx.Commit()
+func (t *transaction) Commit(ctx context.Context) (err error) {
+	_, deferFunc := t.start(ctx, "Commit", "", nil, nil)
+	defer deferFunc(err)
+	err = t.tx.Commit()
+	return
 }
 
-func (t *transaction) Rollback() error {
-	t.o.l.Trace().Msg("rollback operation")
-	return t.tx.Rollback()
+func (t *transaction) Rollback(ctx context.Context) (err error) {
+	_, deferFunc := t.start(ctx, "Rollback", "", nil, nil)
+	defer deferFunc(err)
+	err = t.tx.Rollback()
+	return
 }

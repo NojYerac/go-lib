@@ -10,6 +10,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
+	"source.rad.af/libs/go-lib/internal/runtime"
 	"source.rad.af/libs/go-lib/pkg/version"
 )
 
@@ -39,6 +40,14 @@ func NewTracerProvider(config *Configuration) trace.TracerProvider {
 
 func SetGlobal(tp trace.TracerProvider) {
 	otel.SetTracerProvider(tp)
+}
+
+func TracerForPackage(skipMore ...int) trace.Tracer {
+	skip := 2
+	for _, s := range skipMore {
+		skip += s
+	}
+	return otel.Tracer(runtime.GetPackageName(skip))
 }
 
 func stdOutTracerProviderOpts() []sdktrace.TracerProviderOption {

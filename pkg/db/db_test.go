@@ -111,13 +111,13 @@ var _ = Describe("Database", func() {
 		Describe("Commit", func() {
 			It("issues a commit", func() {
 				sqlMock.ExpectCommit()
-				Expect(tx.Commit()).To(Succeed())
+				Expect(tx.Commit(ctx)).To(Succeed())
 			})
 		})
 		Describe("Rollback", func() {
 			It("issues a rollback", func() {
 				sqlMock.ExpectRollback()
-				Expect(tx.Rollback()).To(Succeed())
+				Expect(tx.Rollback(ctx)).To(Succeed())
 			})
 		})
 	})
@@ -127,4 +127,5 @@ var _ = Describe("Database", func() {
 			Expect(conn.Close()).To(Succeed())
 		})
 	})
+
 })
