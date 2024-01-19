@@ -11,14 +11,15 @@ import (
 )
 
 type testFilter struct {
-	Strings []string      `params:"strings,modify"`
-	Ints    []int         `params:"ints"`
-	StrPtr  *string       `params:"strPtr"`
-	Dur     time.Duration `params:"duration"`
-	Time    time.Time     `params:"time"`
-	Omit    int           `params:"-"`
-	NoTag1  uint          `validate:"lt=10"`
-	NoTag2  bool
+	Strings   []string      `params:"strings,modify"`
+	Ints      []int         `params:"ints"`
+	StrPtr    *string       `params:"strPtr"`
+	Dur       time.Duration `params:"duration"`
+	Time      time.Time     `params:"time"`
+	Omit      int           `params:"-"`
+	Unmarsher []*IntFilter  `params:"tu"`
+	NoTag1    uint          `validate:"lt=10"`
+	NoTag2    bool
 }
 
 var _ = Describe("OrderBy", func() {
@@ -146,9 +147,10 @@ var _ = Describe("GetFilters", func() {
 	Context("with valid values", func() {
 		BeforeEach(func() {
 			qs = "strings=this,that&ints=1,99&strPtr=abc&duration=30s" +
-				"&time=2020-01-01T00:00:00Z&notag1=3&notag2=true"
+				"&time=2020-01-01T00:00:00Z&notag1=3&notag2=true&tu=>0,!<10"
 		})
 		It("should populate the struct", func() {
+			Expect(err).NotTo(HaveOccurred())
 			Expect(tf.Strings).To(ConsistOf("this", "that"))
 			Expect(tf.Ints).To(ConsistOf(1, 99))
 			expectedStrPtr := "abc"
@@ -158,6 +160,10 @@ var _ = Describe("GetFilters", func() {
 			Expect(tf.Time).To(BeTemporally("==", expectedTime))
 			Expect(tf.NoTag1).To(Equal(uint(3)))
 			Expect(tf.NoTag2).To(BeTrue())
+			Expect(tf.Unmarsher).To(And(
+				HaveLen(2),
+				ConsistOf(&IntFilter{GreaterThan: 0}, &IntFilter{Not: true, LessThan: 10}),
+			))
 		})
 	})
 	Context("with wrongly typed values", func() {

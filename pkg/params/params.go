@@ -1,6 +1,7 @@
 package params
 
 import (
+	"encoding"
 	"errors"
 	"fmt"
 	"reflect"
@@ -260,8 +261,28 @@ func makeTimeSetter() setterFunc {
 	}
 }
 
+func makeUnmarshalerSetter(rt reflect.Type) setterFunc {
+	return func(val string) (rv reflect.Value, err error) {
+		rv = reflect.New(rt.Elem())
+		args := []reflect.Value{
+			reflect.ValueOf([]byte(val)),
+		}
+		returned := rv.MethodByName("UnmarshalText").Call(args)
+		if !returned[0].IsNil() {
+			err = returned[0].Interface().(error)
+		}
+		return
+	}
+}
+
+var textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+
 func getSetter(rt reflect.Type, mods []string) setterFunc {
 	var _ = len(mods) // may need mods to tweak setters
+
+	if rt.Implements(textUnmarshalerType) {
+		return makeUnmarshalerSetter(rt)
+	}
 	switch rt.Kind() {
 	case reflect.Ptr:
 		pSetter := getSetter(rt.Elem(), mods)
@@ -331,5 +352,69 @@ func GetFilters(filter interface{}, c *gin.Context) error {
 			c.Request.URL.RawQuery,
 		)
 	}
+	return nil
+}
+
+var _ encoding.TextUnmarshaler = &IntFilter{}
+var _ encoding.TextUnmarshaler = &StringFilter{}
+
+type IntFilter struct {
+	Not         bool
+	Equals      int64
+	LessThan    int64
+	GreaterThan int64
+}
+
+func (i *IntFilter) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return nil
+	}
+	if text[0] == '!' {
+		i.Not = true
+		text = text[1:]
+	}
+	if text[0] == '<' {
+		lt, err := strconv.ParseInt(string(text[1:]), 10, 64)
+		if err != nil {
+			return err
+		}
+		i.LessThan = lt
+		return nil
+	}
+	if text[0] == '>' {
+		gt, err := strconv.ParseInt(string(text[1:]), 10, 64)
+		if err != nil {
+			return err
+		}
+		i.GreaterThan = gt
+		return nil
+	}
+	eq, err := strconv.ParseInt(string(text[1:]), 10, 64)
+	if err != nil {
+		return err
+	}
+	i.Equals = eq
+	return nil
+}
+
+type StringFilter struct {
+	Not      bool
+	Equals   string
+	Contains string
+}
+
+func (i *StringFilter) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return nil
+	}
+	if text[0] == '!' {
+		i.Not = true
+		text = text[1:]
+	}
+	if text[0] == '~' {
+		i.Contains = string(text[1:])
+		return nil
+	}
+	i.Equals = string(text)
 	return nil
 }
