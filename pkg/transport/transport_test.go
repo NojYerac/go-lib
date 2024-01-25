@@ -102,6 +102,6 @@ type echoSrv struct {
 	pb.UnimplementedEchoServer
 }
 
-func (e *echoSrv) UnaryEcho(c context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
+func (e *echoSrv) UnaryEcho(_ context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
 	return &pb.EchoResponse{Message: req.Message}, nil
 }

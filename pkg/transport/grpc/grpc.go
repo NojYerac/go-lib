@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	grpc_zerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -13,7 +14,9 @@ import (
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"source.rad.af/libs/go-lib/pkg/health"
 )
 
 var (
@@ -21,8 +24,48 @@ var (
 	grpcLogger *zerolog.Logger
 )
 
+type clientOpts struct {
+	dialOpts []grpc.DialOption
+	hc       health.Checker
+}
+
+type ClientOpt func(o *clientOpts)
+
+func WithDialOptions(dailOpts ...grpc.DialOption) ClientOpt {
+	return func(o *clientOpts) {
+		o.dialOpts = dailOpts
+	}
+}
+
+func WithHealthChecker(hc health.Checker) ClientOpt {
+	return func(o *clientOpts) {
+		o.hc = hc
+	}
+}
+
 // ClientConn returns a pointer to a new client connection
-func ClientConn(
+func ClientConn(target string, opts ...ClientOpt) (*grpc.ClientConn, error) {
+	o := new(clientOpts)
+	for _, apply := range opts {
+		apply(o)
+	}
+	cc, err := clientConn(target, o.dialOpts...)
+	if err != nil {
+		return nil, err
+	}
+	if o.hc != nil {
+		o.hc.Register("grpc_client", func(_ context.Context) error {
+			state := cc.GetState()
+			if state == connectivity.Ready || state == connectivity.Idle {
+				return nil
+			}
+			return fmt.Errorf("grpc client not ready: %s", state)
+		})
+	}
+	return cc, err
+}
+
+func clientConn(
 	target string,
 	opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	initialize()

@@ -1,19 +1,39 @@
 linters-settings:
-  govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0
-  gocyclo:
-    min-complexity: 15
+  depguard:
+    rules:
+      main:
+        list-mode: lax
+        files:
+          - "$all"
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/DATA-DOG/go-sqlmock
+          - github.com/dgrijalva/jwt-go
+          - github.com/gin-gonic/gin
+          - github.com/go-openapi/errors
+          - github.com/go-playground/validator/v10
+          - github.com/grpc-ecosystem/go-grpc-middleware/
+          - github.com/grpc-ecosystem/go-grpc-prometheus
+          - github.com/jmoiron/sqlx
+          - github.com/mitchellh/mapstructure
+          - github.com/rs/zerolog
+          - github.com/soheilhy/cmux
+          - github.com/spf13/pflag
+          - github.com/spf13/viper
+          - source.rad.af/libs/go-lib
+          - source.rad.af/libs/pb
+        deny:
+          - pkg: "github.com/sirupsen/logrus"
+            desc: use zerolog instead
   dupl:
     threshold: 100
+  funlen:
+    lines: 100
+    statements: 50
   goconst:
     min-len: 2
     min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 120
   gocritic:
     enabled-tags:
       - diagnostic
@@ -25,22 +45,32 @@ linters-settings:
       - wrapperFunc
       - dupImport # https://github.com/go-critic/go-critic/issues/845
       - octalLiteral
-  funlen:
-    lines: 100
-    statements: 50
-
+  gocyclo:
+    min-complexity: 15
+  golint:
+    min-confidence: 0
+  govet:
+    check-shadowing: true
+  lll:
+    line-length: 120
+  misspell:
+    locale: US
+  revive:
+    rules:
+    - name: dot-imports
+      disabled: True
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
     - errcheck
     - funlen
+    - ginkgolinter
     - gochecknoinits
     - goconst
     - gocritic
@@ -57,17 +87,18 @@ linters:
     - nakedret
     - exportloopref
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
   # don't enable:
+  # - deadcode
   # - gochecknoglobals
   # - gocognit
   # - godox
   # - prealloc
+  # - varcheck
+  # - structcheck

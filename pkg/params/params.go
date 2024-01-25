@@ -2,10 +2,8 @@ package params
 
 import (
 	"encoding"
-	"errors"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,39 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	apierrors "github.com/go-openapi/errors"
 	"github.com/go-playground/validator/v10"
-)
-
-// ErrInvalidParam is returned when param vadildation fails
-type ErrInvalidParam struct {
-	Name  string
-	Value string
-}
-
-func (err *ErrInvalidParam) Error() string {
-	return fmt.Sprintf("'%s' is invalid for '%s'", err.Value, err.Name)
-}
-
-var (
-	orderByRE        = regexp.MustCompile(`^-?[a-zA-Z0-9_-]+$`)
-	errInvalidFormat = errors.New("invalid format")
-)
-
-// Dir is the direction data type for order by params
-type Dir bool
-
-// String implements the fmt.Stringer interface
-func (d Dir) String() string {
-	if d {
-		return "DESC"
-	}
-	return "ASC"
-}
-
-const (
-	// ASC ascending
-	ASC Dir = false
-	// DESC descending
-	DESC Dir = true
 )
 
 // parameters
@@ -56,71 +21,18 @@ const (
 	offsetParam  = "offset"
 )
 
-// OrderBy is the data structure for order by params
-type OrderBy struct {
-	Column string
-	Dir    Dir
-}
+var (
+	cache               = map[reflect.Type]map[*paramTag]setterFunc{}
+	trueValues          = []string{"true", "TRUE", "t", "1"}
+	textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+	v                   = validator.New()
+)
 
-// String implements the fmt.Stringer interface
-func (o OrderBy) String() string {
-	return fmt.Sprintf("%s %s", o.Column, o.Dir)
-}
-
-// Page is the data structure for pagination params
-type Page struct {
-	Limit  int64
-	Offset int64
-}
-
-// GetPage returns the pagination params from a request
-func GetPage(c *gin.Context) (*Page, error) {
-	page := &Page{}
-	if o := c.Query(offsetParam); o != "" {
-		offset, err := strconv.ParseInt(o, 10, 64)
-		if err != nil {
-			return nil, apierrors.NewParseError(offsetParam, query, o, err)
-		}
-		page.Offset = offset
-	}
-	if l := c.Query(limitParam); l != "" {
-		limit, err := strconv.ParseInt(l, 10, 64)
-		if err != nil {
-			return nil, apierrors.NewParseError(limitParam, query, l, err)
-		}
-		page.Limit = limit
-	}
-	return page, nil
-}
-
-// GetOrderBy returns the order by params from a request
-func GetOrderBy(c *gin.Context) ([]*OrderBy, error) {
-	var orderBys []*OrderBy
-	if o := c.Query(orderByParam); o != "" {
-		for _, ob := range strings.Split(o, ",") {
-			if !orderByRE.MatchString(ob) {
-				return nil, apierrors.NewParseError(orderByParam, query, ob, errInvalidFormat)
-			}
-			orderBy := &OrderBy{
-				Column: ob,
-			}
-			if ob[0] == '-' {
-				orderBy.Dir = DESC
-				orderBy.Column = ob[1:]
-			}
-			orderBys = append(orderBys, orderBy)
-		}
-	}
-	return orderBys, nil
-}
+type setterFunc func(string) (reflect.Value, error)
 
 type validater interface {
 	Validate() error
 }
-
-var v = validator.New()
-
-type setterFunc func(string) (reflect.Value, error)
 
 type paramTag struct {
 	Name      string
@@ -128,10 +40,41 @@ type paramTag struct {
 	Index     int
 }
 
-var (
-	cache      = map[reflect.Type]map[*paramTag]setterFunc{}
-	trueValues = []string{"true", "TRUE", "t", "1"}
-)
+// GetFilters extracts filters from the query string
+func GetFilters(filter interface{}, c *gin.Context) error {
+	rv := reflect.ValueOf(filter)
+	rt := rv.Type()
+	if rt.Kind() != reflect.Ptr {
+		return fmt.Errorf("expected pointer got %s", rt.String())
+	}
+	rve := rv.Elem()
+	rte := rve.Type()
+	for paramTag, setter := range makeSetters(rte) {
+		val := c.Query(paramTag.Name)
+		if val != "" {
+			fv, err := setter(val)
+			if err != nil {
+				return apierrors.NewParseError(paramTag.Name, query, val, err)
+			}
+			rve.Field(paramTag.Index).Set(fv)
+		}
+	}
+	var err error
+	if f, ok := filter.(validater); ok {
+		err = f.Validate()
+	} else {
+		err = v.Struct(filter)
+	}
+	if err != nil {
+		return apierrors.New(
+			422,
+			"failed to validate filter with error: %s; parsing: %+v",
+			err.Error(),
+			c.Request.URL.RawQuery,
+		)
+	}
+	return nil
+}
 
 func parseTag(t reflect.StructTag) (*paramTag, bool) {
 	p := &paramTag{}
@@ -147,7 +90,7 @@ func parseTag(t reflect.StructTag) (*paramTag, bool) {
 	return p, true
 }
 
-func getSetters(rt reflect.Type) map[*paramTag]setterFunc {
+func makeSetters(rt reflect.Type) map[*paramTag]setterFunc {
 	if setters, ok := cache[rt]; ok {
 		return setters
 	}
@@ -163,10 +106,52 @@ func getSetters(rt reflect.Type) map[*paramTag]setterFunc {
 		if !ok {
 			tagVal.Name = strings.ToLower(field.Name)
 		}
-		setters[tagVal] = getSetter(field.Type, tagVal.Modifiers)
+		setters[tagVal] = makeSetter(field.Type, tagVal.Modifiers)
 	}
 	cache[rt] = setters
 	return setters
+}
+
+func makeSetter(rt reflect.Type, mods []string) setterFunc {
+	var _ = len(mods) // may need mods to tweak setters
+
+	if rt.Implements(textUnmarshalerType) {
+		return makeUnmarshalerSetter(rt)
+	}
+	switch rt.Kind() {
+	case reflect.Ptr:
+		pSetter := makeSetter(rt.Elem(), mods)
+		return makePtrSetter(rt, pSetter)
+	case reflect.Slice:
+		rte := rt.Elem()
+		iSetter := makeSetter(rte, mods)
+		return makeSliceSetter(rt, iSetter)
+	case reflect.Bool:
+		return makeBoolSetter()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if rt.String() == "time.Duration" {
+			return makeDurationSetter()
+		}
+		return makeIntSetter(rt)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return makeUintSetter(rt)
+	case reflect.String:
+		return func(val string) (rv reflect.Value, err error) {
+			rv = reflect.ValueOf(val)
+			return
+		}
+	case reflect.Struct:
+		if rt.String() == "time.Time" {
+			return makeTimeSetter()
+		}
+		fallthrough
+	default:
+		// TODO: implement TextUnmarshaler detection
+		return func(val string) (rv reflect.Value, err error) {
+			err = fmt.Errorf("unsupported type %s", rt.String())
+			return
+		}
+	}
 }
 
 func makePtrSetter(rt reflect.Type, pSetter setterFunc) setterFunc {
@@ -273,148 +258,4 @@ func makeUnmarshalerSetter(rt reflect.Type) setterFunc {
 		}
 		return
 	}
-}
-
-var textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
-
-func getSetter(rt reflect.Type, mods []string) setterFunc {
-	var _ = len(mods) // may need mods to tweak setters
-
-	if rt.Implements(textUnmarshalerType) {
-		return makeUnmarshalerSetter(rt)
-	}
-	switch rt.Kind() {
-	case reflect.Ptr:
-		pSetter := getSetter(rt.Elem(), mods)
-		return makePtrSetter(rt, pSetter)
-	case reflect.Slice:
-		rte := rt.Elem()
-		iSetter := getSetter(rte, mods)
-		return makeSliceSetter(rt, iSetter)
-	case reflect.Bool:
-		return makeBoolSetter()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if rt.String() == "time.Duration" {
-			return makeDurationSetter()
-		}
-		return makeIntSetter(rt)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return makeUintSetter(rt)
-	case reflect.String:
-		return func(val string) (rv reflect.Value, err error) {
-			rv = reflect.ValueOf(val)
-			return
-		}
-	case reflect.Struct:
-		if rt.String() == "time.Time" {
-			return makeTimeSetter()
-		}
-		fallthrough
-	default:
-		// TODO: implement TextUnmarshaler detection
-		return func(val string) (rv reflect.Value, err error) {
-			err = fmt.Errorf("unsupported type %s", rt.String())
-			return
-		}
-	}
-}
-
-// GetFilters extracts filters from the query string
-func GetFilters(filter interface{}, c *gin.Context) error {
-	rv := reflect.ValueOf(filter)
-	rt := rv.Type()
-	if rt.Kind() != reflect.Ptr {
-		return fmt.Errorf("expected pointer got %s", rt.String())
-	}
-	rve := rv.Elem()
-	rte := rve.Type()
-	for paramTag, setter := range getSetters(rte) {
-		val := c.Query(paramTag.Name)
-		if val != "" {
-			fv, err := setter(val)
-			if err != nil {
-				return apierrors.NewParseError(paramTag.Name, query, val, err)
-			}
-			rve.Field(paramTag.Index).Set(fv)
-		}
-	}
-	var err error
-	if f, ok := filter.(validater); ok {
-		err = f.Validate()
-	} else {
-		err = v.Struct(filter)
-	}
-	if err != nil {
-		return apierrors.New(
-			422,
-			"failed to validate filter with error: %s; parsing: %+v",
-			err.Error(),
-			c.Request.URL.RawQuery,
-		)
-	}
-	return nil
-}
-
-var _ encoding.TextUnmarshaler = &IntFilter{}
-var _ encoding.TextUnmarshaler = &StringFilter{}
-
-type IntFilter struct {
-	Not         bool
-	Equals      int64
-	LessThan    int64
-	GreaterThan int64
-}
-
-func (i *IntFilter) UnmarshalText(text []byte) error {
-	if len(text) == 0 {
-		return nil
-	}
-	if text[0] == '!' {
-		i.Not = true
-		text = text[1:]
-	}
-	if text[0] == '<' {
-		lt, err := strconv.ParseInt(string(text[1:]), 10, 64)
-		if err != nil {
-			return err
-		}
-		i.LessThan = lt
-		return nil
-	}
-	if text[0] == '>' {
-		gt, err := strconv.ParseInt(string(text[1:]), 10, 64)
-		if err != nil {
-			return err
-		}
-		i.GreaterThan = gt
-		return nil
-	}
-	eq, err := strconv.ParseInt(string(text[1:]), 10, 64)
-	if err != nil {
-		return err
-	}
-	i.Equals = eq
-	return nil
-}
-
-type StringFilter struct {
-	Not      bool
-	Equals   string
-	Contains string
-}
-
-func (i *StringFilter) UnmarshalText(text []byte) error {
-	if len(text) == 0 {
-		return nil
-	}
-	if text[0] == '!' {
-		i.Not = true
-		text = text[1:]
-	}
-	if text[0] == '~' {
-		i.Contains = string(text[1:])
-		return nil
-	}
-	i.Equals = string(text)
-	return nil
 }
