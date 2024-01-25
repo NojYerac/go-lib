@@ -52,11 +52,11 @@ var _ = Describe("GetPage", func() {
 	var (
 		c    *gin.Context
 		page *Page
-		qs   string
+		uri  string
 		err  error
 	)
 	JustBeforeEach(func() {
-		req, _ := http.NewRequest("GET", "/?"+qs, http.NoBody)
+		req, _ := http.NewRequest("GET", uri, http.NoBody)
 		c = &gin.Context{Request: req}
 		page, err = GetPage(c)
 	})
@@ -65,7 +65,7 @@ var _ = Describe("GetPage", func() {
 	})
 	Context("with valid values", func() {
 		BeforeEach(func() {
-			qs = "limit=99&offset=999"
+			uri = "/?limit=99&offset=999"
 		})
 		It("should populate the struct", func() {
 			Expect(page).NotTo(BeNil())
@@ -77,7 +77,7 @@ var _ = Describe("GetPage", func() {
 	})
 	Context("with invalid values", func() {
 		BeforeEach(func() {
-			qs = "limit=a&offset=999"
+			uri = "/?limit=a&offset=999"
 		})
 		It("return an error", func() {
 			Expect(page).To(BeNil())
@@ -90,11 +90,11 @@ var _ = Describe("GetOrderBy", func() {
 	var (
 		c   *gin.Context
 		ob  []*OrderBy
-		qs  string
+		uri string
 		err error
 	)
 	JustBeforeEach(func() {
-		req, _ := http.NewRequest("GET", "/?"+qs, http.NoBody)
+		req, _ := http.NewRequest("GET", uri, http.NoBody)
 		c = &gin.Context{Request: req}
 		ob, err = GetOrderBy(c)
 	})
@@ -103,7 +103,7 @@ var _ = Describe("GetOrderBy", func() {
 	})
 	Context("with valid values", func() {
 		BeforeEach(func() {
-			qs = "orderBy=col1,-col2"
+			uri = "/?orderBy=col1,-col2"
 		})
 		It("should populate the struct", func() {
 			Expect(ob).To(HaveLen(2))
@@ -119,7 +119,7 @@ var _ = Describe("GetOrderBy", func() {
 	})
 	Context("with invalid values", func() {
 		BeforeEach(func() {
-			qs = "orderBy=*col"
+			uri = "/?orderBy=*col"
 		})
 		It("return an error", func() {
 			Expect(ob).To(BeNil())
@@ -132,12 +132,12 @@ var _ = Describe("GetFilters", func() {
 	var (
 		c   *gin.Context
 		tf  *testFilter
-		qs  string
+		uri string
 		err error
 	)
 	JustBeforeEach(func() {
 		tf = &testFilter{}
-		req, _ := http.NewRequest("GET", "/?"+qs, http.NoBody)
+		req, _ := http.NewRequest("GET", uri, http.NoBody)
 		c = &gin.Context{Request: req}
 		err = GetFilters(tf, c)
 	})
@@ -146,7 +146,7 @@ var _ = Describe("GetFilters", func() {
 	})
 	Context("with valid values", func() {
 		BeforeEach(func() {
-			qs = "strings=this,that&ints=1,99&strPtr=abc&duration=30s" +
+			uri = "/?strings=this,that&ints=1,99&strPtr=abc&duration=30s" +
 				"&time=2020-01-01T00:00:00Z&notag1=3&notag2=true&tu=>0,!<10"
 		})
 		It("should populate the struct", func() {
@@ -168,7 +168,7 @@ var _ = Describe("GetFilters", func() {
 	})
 	Context("with wrongly typed values", func() {
 		BeforeEach(func() {
-			qs = "ints=a"
+			uri = "/?ints=a"
 		})
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())
@@ -176,7 +176,7 @@ var _ = Describe("GetFilters", func() {
 	})
 	Context("with invalid values", func() {
 		BeforeEach(func() {
-			qs = "notag1=99"
+			uri = "/?notag1=99"
 		})
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())

@@ -27,7 +27,7 @@ func MeterForPackage(extraSkip ...int) metric.Meter {
 	return global.Meter(packageName)
 }
 
-func NewMeterProvider(config *Configuration) (metric.MeterProvider, http.HandlerFunc, error) {
+func NewMeterProvider(_ *Configuration) (metric.MeterProvider, http.HandlerFunc, error) {
 	ctlr := controller.New(processor.NewFactory(
 		simple.NewWithHistogramDistribution(),
 		aggregation.StatelessTemporalitySelector(),

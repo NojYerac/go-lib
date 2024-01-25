@@ -53,6 +53,9 @@ func (db *database) Open(ctx context.Context) error {
 	}
 	db.conn = conn
 	db.data = &data{eq: conn, o: db.o}
+	if db.o.h != nil {
+		db.o.h.Register("db_check", db.conn.PingContext)
+	}
 	return initMetrics(db)
 }
 

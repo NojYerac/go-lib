@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
+	"source.rad.af/libs/go-lib/pkg/health"
 )
 
 type Configuration struct {
@@ -30,7 +31,14 @@ func WithLogger(l *zerolog.Logger) Option {
 	}
 }
 
+func WithHealthChecker(h health.Checker) Option {
+	return func(o *options) {
+		o.h = h
+	}
+}
+
 type options struct {
 	l *zerolog.Logger
 	t trace.Tracer
+	h health.Checker
 }

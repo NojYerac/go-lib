@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	pb "google.golang.org/grpc/examples/features/proto/echo"
 	"google.golang.org/grpc/test/bufconn"
 	"source.rad.af/libs/go-lib/pkg/log"
@@ -52,12 +53,12 @@ var _ = Describe("grpc", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}()
 		testOpts := []grpc.DialOption{
-			grpc.WithInsecure(), // nolint: staticcheck,gocritic
+			grpc.WithTransportCredentials(insecure.NewCredentials()), // nolint: staticcheck,gocritic
 			grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 				return listener.Dial()
 			}),
 		}
-		clientConn, err := ClientConn("bufconn", testOpts...)
+		clientConn, err := ClientConn("bufconn", WithDialOptions(testOpts...))
 		Expect(err).NotTo(HaveOccurred())
 		c = pb.NewEchoClient(clientConn)
 		go func() {

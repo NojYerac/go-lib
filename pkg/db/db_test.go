@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "source.rad.af/libs/go-lib/pkg/db"
+	"source.rad.af/libs/go-lib/pkg/health"
 	"source.rad.af/libs/go-lib/pkg/log"
 )
 
@@ -21,6 +22,7 @@ var _ = Describe("Database", func() {
 		conn       Database
 		opCtx, ctx context.Context
 		cancel     context.CancelFunc
+		h          health.Checker
 	)
 	var _, sqlMock, err = sqlmock.NewWithDSN("testDB", sqlmock.MonitorPingsOption(true))
 	if err != nil {
@@ -35,14 +37,24 @@ var _ = Describe("Database", func() {
 		opCtx = l.WithContext(ctx)
 
 		sqlMock.ExpectPing()
-
-		conn = NewDatabase(config, WithLogger(l))
+		h = health.NewChecker(health.NewConfiguration())
+		conn = NewDatabase(config, WithLogger(l), WithHealthChecker(h))
 		Expect(conn.Open(ctx)).To(Succeed())
 	})
 	AfterEach(func() {
 		Expect(sqlMock.ExpectationsWereMet()).To(Succeed())
 
 		cancel()
+	})
+	Describe("healthChecker", func() {
+		It("should ping the db", func() {
+			sqlMock.ExpectPing()
+			go func() {
+				Expect(h.Start(ctx)).To(Equal(context.Canceled))
+			}()
+			Expect(h.Passed()).To(BeTrue())
+			Expect(h.String()).To(ContainSubstring("db_check"))
+		})
 	})
 	Describe("Select", func() {
 		var val []testRow
