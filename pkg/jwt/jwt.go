@@ -1,6 +1,9 @@
-package token
+package jwt
 
 import (
+	"crypto/ecdsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"time"
 
@@ -24,7 +27,11 @@ func (s *Session) Valid() error {
 }
 
 type Issuer interface {
+	Verifier
 	AccessToken(s *auth.User) (string, error)
+}
+
+type Verifier interface {
 	Session(string) (*Session, error)
 }
 
@@ -40,21 +47,44 @@ func NewIssuer(config *Configuration) Issuer {
 	default:
 		signingMethod = jwt.SigningMethodNone
 	}
+	var privateKey *ecdsa.PrivateKey
+	var publicKey *ecdsa.PublicKey
+	var err error
+	if len(config.JWTPrivateKey) > 0 {
+		privBlock, _ := pem.Decode([]byte(config.JWTPrivateKey))
+		privateKey, err = x509.ParseECPrivateKey(privBlock.Bytes)
+		if err != nil {
+			panic(err)
+		}
+	}
+	if len(config.JWTPublicKey) > 0 {
+		pubBlock, _ := pem.Decode([]byte(config.JWTPublicKey))
+		genericPub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+		if err != nil {
+			panic(err)
+		}
+		publicKey = genericPub.(*ecdsa.PublicKey)
+	} else {
+		publicKey = &privateKey.PublicKey
+	}
+
 	return &issuer{
-		accessTokenTTL:  config.AccessTokenTTL,
-		refreshTokenTTL: config.RefreshTokenTTL,
-		privateKey:      config.JWTPrivateKey,
-		publicKey:       config.JWTPublicKey,
-		signingMethod:   signingMethod,
+		accessTokenTTL: config.AccessTokenTTL,
+		privateKey:     privateKey,
+		publicKey:      publicKey,
+		signingMethod:  signingMethod,
 	}
 }
 
+func NewVerifier(config *Configuration) Verifier {
+	return NewIssuer(config)
+}
+
 type issuer struct {
-	accessTokenTTL  time.Duration
-	refreshTokenTTL time.Duration
-	signingMethod   jwt.SigningMethod
-	privateKey      string
-	publicKey       string
+	accessTokenTTL time.Duration
+	signingMethod  jwt.SigningMethod
+	privateKey     *ecdsa.PrivateKey
+	publicKey      *ecdsa.PublicKey
 }
 
 // AccessToken returns a signed JWT
