@@ -16,4 +16,6 @@ project_root=$(cd $(dirname $0)../ >/dev/null 2>&1; pwd)
 mock_dir=${project_root}/internal/mocks
 mockery --dir ${project_root}/pkg --recursive --keeptree --output ${mock_dir} --name '^(Server|Client|Database|Tx|Checker)$'
 
+go_redis=$(go list -m -f "{{ .Dir }}" github.com/go-redis/redis)
+mockery --dir ${go_redis} --output ${mock_dir}/go-redis --name '^Cmdable|(Status|String|Int)Cmd$'
 echo "Generated mocks"

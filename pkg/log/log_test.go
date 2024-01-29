@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"bytes"
+	"context"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,5 +34,9 @@ var _ = Describe("log", func() {
 			ContainSubstring("log"),
 			ContainSubstring("service="),
 			ContainSubstring("test-service")))
+	})
+	It("sets a default ctx logger", func() {
+		SetDefaultCtxLogger(l)
+		Expect(zerolog.Ctx(context.Background())).To(Equal(l))
 	})
 })
