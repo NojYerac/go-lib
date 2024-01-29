@@ -9,67 +9,67 @@ import (
 
 func replaceGRPCLogger(l *zerolog.Logger) {
 	if l != nil {
-		gl := &grpcV2Logger{*l}
+		gl := &GrpcV2Logger{l}
 		grpclog.SetLoggerV2(gl)
 	}
 }
 
-var _ grpclog.LoggerV2 = &grpcV2Logger{}
+var _ grpclog.LoggerV2 = &GrpcV2Logger{}
 
-type grpcV2Logger struct {
-	zerolog.Logger
+type GrpcV2Logger struct {
+	L *zerolog.Logger
 }
 
-func (gl *grpcV2Logger) Info(args ...interface{}) {
-	gl.Logger.Debug().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Info(args ...interface{}) {
+	gl.L.Debug().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Infoln(args ...interface{}) {
-	gl.Logger.Debug().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Infoln(args ...interface{}) {
+	gl.L.Debug().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Infof(format string, args ...interface{}) {
-	gl.Logger.Debug().Msgf(format, args...)
+func (gl *GrpcV2Logger) Infof(format string, args ...interface{}) {
+	gl.L.Debug().Msgf(format, args...)
 }
 
-func (gl *grpcV2Logger) Warning(args ...interface{}) {
-	gl.Logger.Warn().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Warning(args ...interface{}) {
+	gl.L.Warn().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Warningln(args ...interface{}) {
-	gl.Logger.Warn().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Warningln(args ...interface{}) {
+	gl.L.Warn().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Warningf(format string, args ...interface{}) {
-	gl.Logger.Warn().Msgf(format, args...)
+func (gl *GrpcV2Logger) Warningf(format string, args ...interface{}) {
+	gl.L.Warn().Msgf(format, args...)
 }
 
-func (gl *grpcV2Logger) Error(args ...interface{}) {
-	gl.Logger.Error().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Error(args ...interface{}) {
+	gl.L.Error().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Errorln(args ...interface{}) {
-	gl.Logger.Error().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Errorln(args ...interface{}) {
+	gl.L.Error().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Errorf(format string, args ...interface{}) {
-	gl.Logger.Fatal().Msgf(format, args...)
+func (gl *GrpcV2Logger) Errorf(format string, args ...interface{}) {
+	gl.L.Error().Msgf(format, args...)
 }
 
-func (gl *grpcV2Logger) Fatal(args ...interface{}) {
-	gl.Logger.Fatal().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Fatal(args ...interface{}) {
+	gl.L.Fatal().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Fatalln(args ...interface{}) {
-	gl.Logger.Fatal().Msg(fmt.Sprint(args...))
+func (gl *GrpcV2Logger) Fatalln(args ...interface{}) {
+	gl.L.Fatal().Msg(fmt.Sprint(args...))
 }
 
-func (gl *grpcV2Logger) Fatalf(format string, args ...interface{}) {
-	gl.Logger.Fatal().Msgf(format, args...)
+func (gl *GrpcV2Logger) Fatalf(format string, args ...interface{}) {
+	gl.L.Fatal().Msgf(format, args...)
 }
 
-func (gl *grpcV2Logger) V(l int) bool {
-	lvl := gl.Logger.GetLevel()
+func (gl *GrpcV2Logger) V(l int) bool {
+	lvl := gl.L.GetLevel()
 	switch lvl {
 	case zerolog.TraceLevel, zerolog.DebugLevel:
 		return true

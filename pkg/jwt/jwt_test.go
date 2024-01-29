@@ -22,6 +22,7 @@ var _ = Describe("Testtoken", func() {
 
 	It("is testable", func() {
 		Expect(true).To(BeTrue())
+		Expect(jwt.NewConfiguration()).NotTo(BeNil())
 	})
 	It("validates as expected", func() {
 		var (

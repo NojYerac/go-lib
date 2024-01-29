@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	pb "google.golang.org/grpc/examples/features/proto/echo"
 	"google.golang.org/grpc/test/bufconn"
+	"source.rad.af/libs/go-lib/pkg/health"
 	"source.rad.af/libs/go-lib/pkg/log"
 	. "source.rad.af/libs/go-lib/pkg/transport/grpc"
 )
@@ -40,9 +41,10 @@ var _ = Describe("grpc", func() {
 		req        *pb.EchoRequest
 		res        *pb.EchoResponse
 		ctx        context.Context
+		cancel     context.CancelFunc
 	)
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx, cancel = context.WithCancel(context.Background())
 		listener = bufconn.Listen(bufSz)
 		grpcServer = NewServer(func(s *grpc.Server) {
 			pb.RegisterEchoServer(s, &server{})
@@ -58,15 +60,21 @@ var _ = Describe("grpc", func() {
 				return listener.Dial()
 			}),
 		}
-		clientConn, err := ClientConn("bufconn", WithDialOptions(testOpts...))
+		hc := health.NewChecker(health.NewConfiguration())
+		clientConn, err := ClientConn("bufconn", WithDialOptions(testOpts...), WithHealthChecker(hc))
 		Expect(err).NotTo(HaveOccurred())
 		c = pb.NewEchoClient(clientConn)
 		go func() {
 			defer GinkgoRecover()
 			Expect(grpcServer.Serve(listener)).To(Succeed())
 		}()
+		go func() {
+			defer GinkgoRecover()
+			Expect(hc.Start(ctx)).To(MatchError(context.Canceled))
+		}()
 	})
 	AfterEach(func() {
+		cancel()
 		b.Reset()
 		Expect(grpcServer.GracefulStop).NotTo(Panic())
 		Expect(listener.Close()).To(Succeed())
