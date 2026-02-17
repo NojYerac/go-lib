@@ -3,9 +3,9 @@ package db
 import (
 	"time"
 
+	"github.com/nojyerac/go-lib/pkg/health"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
-	"source.rad.af/libs/go-lib/pkg/health"
 )
 
 type Configuration struct {

@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	. "github.com/nojyerac/go-lib/pkg/tracing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	. "source.rad.af/libs/go-lib/pkg/tracing"
 )
 
 var _ = Describe("tracing", func() {
@@ -73,7 +73,7 @@ var _ = Describe("tracing", func() {
 			for _, t := range traces {
 				Expect(t).To(And(
 					ContainSubstring(`"Resource":[{"Key":"service.name","Value":{"Type":"STRING","Value":""}},`),
-					ContainSubstring(`"InstrumentationLibrary":{"Name":"source.rad.af/libs/go-lib/pkg/tracing_test"`),
+					ContainSubstring(`"InstrumentationLibrary":{"Name":"github.com/nojyerac/go-lib/pkg/tracing_test"`),
 				))
 			}
 		})

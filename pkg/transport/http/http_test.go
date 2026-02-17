@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	mockhealth "github.com/nojyerac/go-lib/internal/mocks/health"
+	"github.com/nojyerac/go-lib/pkg/log"
+	"github.com/nojyerac/go-lib/pkg/metrics"
+	"github.com/nojyerac/go-lib/pkg/tracing"
+	. "github.com/nojyerac/go-lib/pkg/transport/http"
+	"github.com/nojyerac/go-lib/pkg/version"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/metric"
-	mockhealth "source.rad.af/libs/go-lib/internal/mocks/health"
-	"source.rad.af/libs/go-lib/pkg/log"
-	"source.rad.af/libs/go-lib/pkg/metrics"
-	"source.rad.af/libs/go-lib/pkg/tracing"
-	. "source.rad.af/libs/go-lib/pkg/transport/http"
-	"source.rad.af/libs/go-lib/pkg/version"
 )
 
 var metricHandler http.HandlerFunc

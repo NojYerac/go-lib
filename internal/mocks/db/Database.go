@@ -5,8 +5,8 @@ package mocks
 import (
 	context "context"
 
+	db "github.com/nojyerac/go-lib/pkg/db"
 	mock "github.com/stretchr/testify/mock"
-	db "source.rad.af/libs/go-lib/pkg/db"
 
 	sql "database/sql"
 

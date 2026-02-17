@@ -3,6 +3,7 @@ package metrics
 import (
 	"net/http"
 
+	"github.com/nojyerac/go-lib/internal/runtime"
 	otelruntime "go.opentelemetry.io/contrib/instrumentation/runtime"
 	prometheusexporter "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -11,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/export/aggregation"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
-	"source.rad.af/libs/go-lib/internal/runtime"
 )
 
 func SetGlobal(mp metric.MeterProvider) {

@@ -4,13 +4,13 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/nojyerac/go-lib/pkg/metrics"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
 	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/metric/unit"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"source.rad.af/libs/go-lib/pkg/metrics"
 )
 
 var (

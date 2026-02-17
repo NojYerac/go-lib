@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/nojyerac/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/tracing"
 	"go.opentelemetry.io/otel/trace"
-	"source.rad.af/libs/go-lib/pkg/health"
-	"source.rad.af/libs/go-lib/pkg/tracing"
 )
 
 // NewClient returns a new redis client

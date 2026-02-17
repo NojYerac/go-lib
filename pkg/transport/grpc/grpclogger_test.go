@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/nojyerac/go-lib/pkg/log"
+	. "github.com/nojyerac/go-lib/pkg/transport/grpc"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	"source.rad.af/libs/go-lib/pkg/log"
-	. "source.rad.af/libs/go-lib/pkg/transport/grpc"
 )
 
 var _ = Describe("GrpcV2Logger", func() {

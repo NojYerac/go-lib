@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
+	"github.com/nojyerac/go-lib/pkg/log"
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 type Loader interface {

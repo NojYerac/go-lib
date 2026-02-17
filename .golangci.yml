@@ -22,8 +22,7 @@ linters-settings:
           - github.com/soheilhy/cmux
           - github.com/spf13/pflag
           - github.com/spf13/viper
-          - source.rad.af/libs/go-lib
-          - source.rad.af/libs/pb
+          - github.com/nojyerac/go-lib
         deny:
           - pkg: "github.com/sirupsen/logrus"
             desc: use zerolog instead

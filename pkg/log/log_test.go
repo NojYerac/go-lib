@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 
+	. "github.com/nojyerac/go-lib/pkg/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
-	. "source.rad.af/libs/go-lib/pkg/log"
 )
 
 var _ = Describe("log", func() {

@@ -7,6 +7,9 @@ import (
 	"io"
 	"net"
 
+	"github.com/nojyerac/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/log"
+	. "github.com/nojyerac/go-lib/pkg/transport/grpc"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rs/zerolog"
@@ -14,9 +17,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	pb "google.golang.org/grpc/examples/features/proto/echo"
 	"google.golang.org/grpc/test/bufconn"
-	"source.rad.af/libs/go-lib/pkg/health"
-	"source.rad.af/libs/go-lib/pkg/log"
-	. "source.rad.af/libs/go-lib/pkg/transport/grpc"
 )
 
 const (

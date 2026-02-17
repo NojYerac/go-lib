@@ -7,14 +7,14 @@ import (
 	nethttp "net/http"
 	"time"
 
+	"github.com/nojyerac/go-lib/pkg/log"
+	. "github.com/nojyerac/go-lib/pkg/transport"
+	"github.com/nojyerac/go-lib/pkg/transport/http"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	pb "google.golang.org/grpc/examples/features/proto/echo"
-	"source.rad.af/libs/go-lib/pkg/log"
-	. "source.rad.af/libs/go-lib/pkg/transport"
-	"source.rad.af/libs/go-lib/pkg/transport/http"
 )
 
 var _ = Describe("transport", func() {

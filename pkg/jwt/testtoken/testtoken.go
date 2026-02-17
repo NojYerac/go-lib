@@ -4,8 +4,8 @@ import (
 	"time"
 
 	gojwt "github.com/dgrijalva/jwt-go"
-	"source.rad.af/libs/go-lib/pkg/auth"
-	"source.rad.af/libs/go-lib/pkg/jwt"
+	"github.com/nojyerac/go-lib/pkg/auth"
+	"github.com/nojyerac/go-lib/pkg/jwt"
 )
 
 //nolint:gosec // key not to be used outside of testing

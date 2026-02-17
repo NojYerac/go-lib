@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/nojyerac/go-lib/pkg/log"
+	"github.com/nojyerac/go-lib/pkg/tracing"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"source.rad.af/libs/go-lib/pkg/log"
-	"source.rad.af/libs/go-lib/pkg/tracing"
 )
 
 func NewDatabase(config *Configuration, opts ...Option) Database {

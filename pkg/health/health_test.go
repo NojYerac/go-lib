@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/nojyerac/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"source.rad.af/libs/go-lib/pkg/health"
-	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 var passingChecker health.CheckFn = func(c context.Context) error { return nil }

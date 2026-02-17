@@ -4,10 +4,10 @@ import (
 	"time"
 
 	gojwt "github.com/dgrijalva/jwt-go"
+	"github.com/nojyerac/go-lib/pkg/jwt"
+	. "github.com/nojyerac/go-lib/pkg/jwt/testtoken"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"source.rad.af/libs/go-lib/pkg/jwt"
-	. "source.rad.af/libs/go-lib/pkg/jwt/testtoken"
 )
 
 func expired() time.Time {

@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	mocks "github.com/nojyerac/go-lib/internal/mocks/go-redis"
+	"github.com/nojyerac/go-lib/pkg/health"
+	. "github.com/nojyerac/go-lib/pkg/redis"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	mocks "source.rad.af/libs/go-lib/internal/mocks/go-redis"
-	"source.rad.af/libs/go-lib/pkg/health"
-	. "source.rad.af/libs/go-lib/pkg/redis"
 )
 
 var _ = Describe("Client", func() {

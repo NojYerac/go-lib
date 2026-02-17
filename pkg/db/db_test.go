@@ -6,11 +6,11 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
+	. "github.com/nojyerac/go-lib/pkg/db"
+	"github.com/nojyerac/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "source.rad.af/libs/go-lib/pkg/db"
-	"source.rad.af/libs/go-lib/pkg/health"
-	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 type testRow struct {

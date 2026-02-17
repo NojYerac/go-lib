@@ -3,10 +3,10 @@ package config_test
 import (
 	"testing"
 
+	. "github.com/nojyerac/go-lib/pkg/config"
+	"github.com/nojyerac/go-lib/pkg/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "source.rad.af/libs/go-lib/pkg/config"
-	"source.rad.af/libs/go-lib/pkg/log"
 )
 
 func TestConfig(t *testing.T) {

@@ -2,7 +2,7 @@ package redis
 
 import (
 	"github.com/go-redis/redis"
-	"source.rad.af/libs/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/health"
 )
 
 type Configuration struct {

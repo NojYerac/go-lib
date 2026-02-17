@@ -1,4 +1,4 @@
-module source.rad.af/libs/go-lib
+module github.com/nojyerac/go-lib
 
 go 1.18
 

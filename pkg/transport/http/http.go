@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nojyerac/go-lib/pkg/health"
+	"github.com/nojyerac/go-lib/pkg/log"
+	"github.com/nojyerac/go-lib/pkg/metrics"
+	"github.com/nojyerac/go-lib/pkg/tracing"
+	"github.com/nojyerac/go-lib/pkg/version"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/metric/unit"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"source.rad.af/libs/go-lib/pkg/health"
-	"source.rad.af/libs/go-lib/pkg/log"
-	"source.rad.af/libs/go-lib/pkg/metrics"
-	"source.rad.af/libs/go-lib/pkg/tracing"
-	"source.rad.af/libs/go-lib/pkg/version"
 )
 
 type Server interface {

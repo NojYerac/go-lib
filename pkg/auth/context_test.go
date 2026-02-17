@@ -3,9 +3,9 @@ package auth_test
 import (
 	"context"
 
+	. "github.com/nojyerac/go-lib/pkg/auth"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "source.rad.af/libs/go-lib/pkg/auth"
 )
 
 var _ = Describe("context", func() {

@@ -3,6 +3,8 @@ package tracing
 import (
 	"os"
 
+	"github.com/nojyerac/go-lib/internal/runtime"
+	"github.com/nojyerac/go-lib/pkg/version"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -10,8 +12,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
-	"source.rad.af/libs/go-lib/internal/runtime"
-	"source.rad.af/libs/go-lib/pkg/version"
 )
 
 func NewTracerProvider(config *Configuration) trace.TracerProvider {

@@ -12,7 +12,7 @@ import (
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 
-	libhttp "source.rad.af/libs/go-lib/pkg/transport/http"
+	libhttp "github.com/nojyerac/go-lib/pkg/transport/http"
 )
 
 type Configuration struct {

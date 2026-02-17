@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"source.rad.af/libs/go-lib/pkg/auth"
-	"source.rad.af/libs/go-lib/pkg/version"
+	"github.com/nojyerac/go-lib/pkg/auth"
+	"github.com/nojyerac/go-lib/pkg/version"
 )
 
 var (
