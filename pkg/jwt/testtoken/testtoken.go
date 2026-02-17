@@ -22,17 +22,24 @@ ftwFC/YY3Q3oXDX0iAD3waIm4J9yN4gD1K8kmQN80jfjSjf2k2hLhZ1X3Q==
 -----END PUBLIC KEY-----`
 )
 
-var Issuer = jwt.NewIssuer(&jwt.Configuration{
-	AccessTokenTTL:   time.Minute,
-	JWTSigningMethod: gojwt.SigningMethodES256.Name,
-	JWTPrivateKey:    PrivateKey,
-})
+var (
+	Issuer   jwt.Issuer
+	Verifier jwt.Verifier
+)
 
-var Verifier = jwt.NewVerifier(&jwt.Configuration{
-	AccessTokenTTL:   time.Minute,
-	JWTSigningMethod: gojwt.SigningMethodES256.Name,
-	JWTPublicKey:     PublicKey,
-})
+func init() {
+	Issuer = jwt.NewIssuer(&jwt.Configuration{
+		AccessTokenTTL:   time.Minute,
+		JWTSigningMethod: gojwt.SigningMethodES256.Name,
+		JWTPrivateKey:    PrivateKey,
+	})
+
+	Verifier = jwt.NewVerifier(&jwt.Configuration{
+		AccessTokenTTL:   time.Minute,
+		JWTSigningMethod: gojwt.SigningMethodES256.Name,
+		JWTPublicKey:     PublicKey,
+	})
+}
 
 func TestToken() string {
 	token, _ := Issuer.AccessToken(&auth.User{

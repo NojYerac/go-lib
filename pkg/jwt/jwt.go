@@ -50,14 +50,14 @@ func NewIssuer(config *Configuration) Issuer {
 	var privateKey *ecdsa.PrivateKey
 	var publicKey *ecdsa.PublicKey
 	var err error
-	if len(config.JWTPrivateKey) > 0 {
+	if config.JWTPrivateKey != "" {
 		privBlock, _ := pem.Decode([]byte(config.JWTPrivateKey))
 		privateKey, err = x509.ParseECPrivateKey(privBlock.Bytes)
 		if err != nil {
 			panic(err)
 		}
 	}
-	if len(config.JWTPublicKey) > 0 {
+	if config.JWTPrivateKey != "" {
 		pubBlock, _ := pem.Decode([]byte(config.JWTPublicKey))
 		genericPub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
 		if err != nil {

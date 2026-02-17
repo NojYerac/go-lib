@@ -24,7 +24,7 @@ func NewLogger(config *Configuration, opts ...Option) *zerolog.Logger {
 		level = zerolog.InfoLevel
 	}
 	l := zerolog.New(o.output).Level(level).With().Timestamp().Logger()
-	if len(config.ServiceName) > 0 {
+	if config.ServiceName != "" {
 		l = l.With().Str("service", config.ServiceName).Logger()
 	}
 	return &l
