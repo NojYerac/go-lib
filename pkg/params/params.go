@@ -146,7 +146,6 @@ func makeSetter(rt reflect.Type, mods []string) setterFunc {
 		}
 		fallthrough
 	default:
-		// TODO: implement TextUnmarshaler detection
 		return func(val string) (rv reflect.Value, err error) {
 			err = fmt.Errorf("unsupported type %s", rt.String())
 			return
