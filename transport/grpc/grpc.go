@@ -21,7 +21,7 @@ import (
 var (
 	ini        bool
 	lock       sync.Mutex
-	grpcLogger *logrus.Logger
+	grpcLogger logrus.FieldLogger
 )
 
 type clientOpts struct {
@@ -99,7 +99,7 @@ func NewServer(registerServices func(*grpc.Server), opts ...grpc.ServerOption) *
 	return server
 }
 
-func SetLogger(l *logrus.Logger) {
+func SetLogger(l logrus.FieldLogger) {
 	lock.Lock()
 	defer lock.Unlock()
 	if ini {

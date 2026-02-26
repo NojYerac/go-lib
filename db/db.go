@@ -45,9 +45,11 @@ type database struct {
 	o       *options
 }
 
+var _ = (&logrus.Logger{}).WithFields(logrus.Fields{})
+
 // Open returns a db connection
 func (db *database) Open(ctx context.Context) error {
-	db.o.l.Trace("open connection")
+	db.o.l.Debug("open connection")
 	conn, err := sqlx.ConnectContext(ctx, db.driver, db.connStr)
 	if err != nil {
 		return err
@@ -62,7 +64,7 @@ func (db *database) Open(ctx context.Context) error {
 
 // Close releases the connection
 func (db *database) Close() error {
-	db.o.l.Trace("close connection")
+	db.o.l.Debug("close connection")
 	if db.o.reg != nil {
 		_ = db.o.reg.Unregister()
 		db.o.reg = nil
@@ -74,7 +76,7 @@ func (db *database) Close() error {
 func (db *database) Begin(parentCtx context.Context) (txx Tx, err error) {
 	ctx, deferFunc := db.start(parentCtx, "Begin", "", nil, nil)
 	defer deferFunc(err)
-	db.o.l.Trace("begin transaction")
+	db.o.l.Debug("begin transaction")
 	tx, err := db.conn.BeginTxx(ctx, nil)
 	if err != nil {
 		return

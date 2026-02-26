@@ -26,7 +26,7 @@ func NewConfiguration() *Configuration {
 
 type Option func(*options)
 
-func WithLogger(l *logrus.Logger) Option {
+func WithLogger(l logrus.FieldLogger) Option {
 	return func(o *options) {
 		o.l = l
 	}
@@ -39,7 +39,7 @@ func WithHealthChecker(h health.Checker) Option {
 }
 
 type options struct {
-	l   *logrus.Logger
+	l   logrus.FieldLogger
 	t   trace.Tracer
 	h   health.Checker
 	reg metric.Registration

@@ -27,7 +27,7 @@ func WithMetricsHandler(mh http.Handler) Option {
 	}
 }
 
-func WithLogger(l *logrus.Logger) Option {
+func WithLogger(l logrus.FieldLogger) Option {
 	return func(s *server) {
 		s.logger = l
 	}

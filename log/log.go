@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewLogger(c *Configuration, opts ...Option) *logrus.Logger {
+func NewLogger(c *Configuration, opts ...Option) logrus.FieldLogger {
 	o := &options{
 		output: os.Stdout,
 	}
@@ -23,7 +23,7 @@ func NewLogger(c *Configuration, opts ...Option) *logrus.Logger {
 	} else {
 		logger.SetFormatter(&logrus.JSONFormatter{})
 	}
-	return logger.WithField("service", c.ServiceName).Logger
+	return logger.WithField("service", c.ServiceName)
 }
 
 func Nop() *logrus.Logger {
@@ -32,9 +32,9 @@ func Nop() *logrus.Logger {
 	return logger
 }
 
-var defaultCtxLogger *logrus.Logger
+var defaultCtxLogger logrus.FieldLogger
 
-func SetDefaultCtxLogger(l *logrus.Logger) {
+func SetDefaultCtxLogger(l logrus.FieldLogger) {
 	defaultCtxLogger = l
 }
 
@@ -42,12 +42,12 @@ type ctxLoggerKeyType struct{}
 
 var ctxLoggerKey = ctxLoggerKeyType{}
 
-func WithLogger(ctx context.Context, l *logrus.Logger) context.Context {
+func WithLogger(ctx context.Context, l logrus.FieldLogger) context.Context {
 	return context.WithValue(ctx, ctxLoggerKey, l)
 }
 
-func FromContext(ctx context.Context) *logrus.Logger {
-	if logger, ok := ctx.Value(ctxLoggerKey).(*logrus.Logger); ok {
+func FromContext(ctx context.Context) logrus.FieldLogger {
+	if logger, ok := ctx.Value(ctxLoggerKey).(logrus.FieldLogger); ok {
 		return logger
 	}
 	if defaultCtxLogger != nil {

@@ -31,7 +31,7 @@ type Server interface {
 }
 
 type server struct {
-	logger         *logrus.Logger
+	logger         logrus.FieldLogger
 	tracer         trace.Tracer
 	meter          metric.Meter
 	metricsHandler http.Handler
