@@ -89,15 +89,16 @@ func NewServer(c *Configuration, opts ...Option) Server {
 	mux := http.NewServeMux()
 	s := &server{
 		logger:     logrus.StandardLogger(),
+		tracer:     tracing.TracerForPackage(),
+		meter:      metrics.MeterForPackage(),
 		mux:        mux,
 		middleware: make([]func(http.Handler) http.Handler, 0),
 		apiPrefix:  "/api",
 	}
-
-	s.middleware = append(s.middleware, s.telemetryMiddleware(), panicHandler)
 	for _, applyOpt := range opts {
 		applyOpt(s)
 	}
+	s.middleware = append(s.middleware, s.telemetryMiddleware(), panicHandler)
 	s.mux.HandleFunc("/livez", pingHandler)
 	s.mux.HandleFunc("/version", versionHandler)
 	if s.metricsHandler != nil {

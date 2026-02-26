@@ -9,7 +9,7 @@ The package does not expose configuration structs; it simply provides helper fun
 ### Accessing Version Information
 
 ```go
-import "github.com/nojyerac/go-lib/pkg/version"
+import "github.com/nojyerac/go-lib/version"
 
 func main() {
     v := version.GetVersion()
@@ -27,7 +27,7 @@ go build -ldflags "-X version.gitSHA=$(git rev-parse --short HEAD)"
 
 ```go
 import (
-    "github.com/nojyerac/go-lib/pkg/version"
+    "github.com/nojyerac/go-lib/version"
     "log"
 )
 

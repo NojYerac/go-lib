@@ -2,7 +2,7 @@
 
 > Common libraries for microservices
 
-An opinionated library that cover the common needs of all microservices.
+An opinionated tool kit that cover the common needs of all microservices.
 Scafold a new service, and automatically have access to structured logging, health check, metrics, tracing.
 
 ## Available Packages
@@ -15,4 +15,5 @@ Scafold a new service, and automatically have access to structured logging, heal
 - [tracing](./tracing/README.md)
 - [transport](./transport/README.md)
   - [http](./transport/http/README.md)
+  - [grpc](./transport/grpc/README.md)
 - [version](./version/README.md)

@@ -31,7 +31,7 @@ Custom validation functions can be added via `RegisterCustomValidator(tag string
 package main
 
 import (
-  "github.com/nojyerac/go-lib/pkg/config"
+  "github.com/nojyerac/go-lib/config"
 )
 
 // create configuration with types, variable names, and validation.

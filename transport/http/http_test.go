@@ -17,7 +17,6 @@ import (
 )
 
 var metricHandler http.Handler
-var logOut = GinkgoWriter
 var _ = BeforeSuite(func() {
 	version.SetServiceName("test")
 	var mp *metric.MeterProvider
@@ -39,7 +38,7 @@ var _ = Describe("server", func() {
 	BeforeEach(func() {
 		mockChecker = &mockhealth.MockChecker{}
 		w = httptest.NewRecorder()
-		l := log.NewLogger(log.NewConfiguration(), log.WithOutput(logOut))
+		l := log.NewLogger(log.TestConfig)
 		s = NewServer(
 			&Configuration{},
 			WithLogger(l),
@@ -167,9 +166,6 @@ var _ = Describe("server", func() {
 
 func serviceRoute() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := log.FromContext(ctx)
-		logger.Debug("service route")
 		switch r.URL.Path {
 		case "/api/err":
 			w.WriteHeader(http.StatusInternalServerError)

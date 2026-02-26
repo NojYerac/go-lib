@@ -50,9 +50,9 @@ A typical usage pattern is:
 import (
     "os"
 
-    "github.com/nojyerac/go-lib/pkg/db"
+    "github.com/nojyerac/go-lib/db"
     "github.com/rs/zerolog"
-    "github.com/nojyerac/go-lib/pkg/health"
+    "github.com/nojyerac/go-lib/health"
 )
 
 func main() {
