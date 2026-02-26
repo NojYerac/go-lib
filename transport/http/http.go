@@ -137,15 +137,6 @@ func (s *server) telemetryMiddleware() func(http.Handler) http.Handler {
 	logger := s.logger
 	tracer := s.tracer
 	meter := s.meter
-	if logger == nil {
-		logger = log.Nop()
-	}
-	if meter == nil {
-		meter = metrics.MeterForPackage()
-	}
-	if tracer == nil {
-		tracer = tracing.TracerForPackage()
-	}
 	durationHistogram, err := meter.Float64Histogram("http_request_duration_histogram")
 	if err != nil {
 		logger.WithError(err).Fatal("failed to create duration histogram")

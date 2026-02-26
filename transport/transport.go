@@ -17,9 +17,9 @@ import (
 
 type Configuration struct {
 	NoTLS    bool   `config:"no_tls"`
-	PubCert  string `config:"tls_public_cert" validate:"required_unless=NoTLS true,file"`
-	PrivKey  string `config:"tls_private_key" validate:"required_unless=NoTLS,file"`
-	RootCA   string `config:"tls_root_ca" validate:"required_unless=NoTLS,file"`
+	PubCert  string `config:"tls_public_cert" validate:"required_unless=NoTLS true"`
+	PrivKey  string `config:"tls_private_key" validate:"required_unless=NoTLS true"`
+	RootCA   string `config:"tls_root_ca" validate:"required_unless=NoTLS true"`
 	Hostname string `config:"hostname" validate:"required,hostname_rfc1123"`
 	Port     string `config:"port" validate:"required,numeric,min=1,max=65535"`
 }

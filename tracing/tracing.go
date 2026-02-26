@@ -16,7 +16,7 @@ import (
 type Configuration struct {
 	ExporterType string  `config:"exporter_type" validate:"oneof=stdout file otlp noop"`
 	FilePath     string  `config:"file_path" validate:"required_if=ExporterType file"`
-	OTLPURL      string  `config:"otlp_url" validate:"url,required_if=ExporterType otlp"`
+	OTLPURL      string  `config:"otlp_url" validate:"required_if=ExporterType otlp"`
 	SampleRatio  float64 `config:"sample_ratio" validate:"gte=0,lte=1"`
 }
 
