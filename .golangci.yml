@@ -45,14 +45,14 @@ linters:
             - github.com/grpc-ecosystem/go-grpc-prometheus
             - github.com/jmoiron/sqlx
             - github.com/mitchellh/mapstructure
-            - github.com/rs/zerolog
+            - github.com/sirupsen/logrus
             - github.com/soheilhy/cmux
             - github.com/spf13/pflag
             - github.com/spf13/viper
             - github.com/nojyerac/go-lib
           deny:
-            - pkg: github.com/sirupsen/logrus
-              desc: use zerolog instead
+            - pkg: github.com/rs/zerolog
+              desc: "Use logrus instead of zerolog for logging"
     dupl:
       threshold: 100
     funlen:
