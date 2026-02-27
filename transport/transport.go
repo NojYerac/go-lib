@@ -3,23 +3,20 @@ package transport
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"net"
-	"os"
-
-	"github.com/soheilhy/cmux"
-	"google.golang.org/grpc"
 
 	"github.com/nojyerac/go-lib/log"
 	libhttp "github.com/nojyerac/go-lib/transport/http"
+	"github.com/soheilhy/cmux"
+	"google.golang.org/grpc"
 )
 
 type Configuration struct {
 	NoTLS    bool   `config:"no_tls"`
 	PubCert  string `config:"tls_public_cert" validate:"required_unless=NoTLS true"`
 	PrivKey  string `config:"tls_private_key" validate:"required_unless=NoTLS true"`
-	RootCA   string `config:"tls_root_ca" validate:"required_unless=NoTLS true"`
+	RootCA   string `config:"tls_root_ca"`
 	Hostname string `config:"hostname" validate:"required,hostname_rfc1123"`
 	Port     string `config:"port" validate:"required,numeric,min=1,max=65535"`
 }
@@ -27,36 +24,8 @@ type Configuration struct {
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		Hostname: "0.0.0.0",
-		Port:     "443",
+		Port:     "80",
 	}
-}
-
-func tlsConfig(config *Configuration) (*tls.Config, error) {
-	suites := []uint16{
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-	}
-	cert, err := tls.LoadX509KeyPair(config.PubCert, config.PrivKey)
-	if err != nil {
-		return nil, err
-	}
-	rootCAs := x509.NewCertPool()
-	if ca, err := os.ReadFile(config.RootCA); err == nil {
-		rootCAs.AppendCertsFromPEM(ca)
-	}
-	return &tls.Config{
-		RootCAs:                  rootCAs,
-		Certificates:             []tls.Certificate{cert},
-		MinVersion:               tls.VersionTLS12,
-		PreferServerCipherSuites: true,
-		CipherSuites:             suites,
-	}, nil
 }
 
 type Server interface {
@@ -69,28 +38,22 @@ type server struct {
 	listener   net.Listener
 }
 
-func NewServer(config *Configuration, opts ...Option) (Server, error) {
-	target := net.JoinHostPort(config.Hostname, config.Port)
-	listener, err := net.Listen("tcp", target)
+func getListener(target string, config *Configuration) (net.Listener, error) {
+	if config.NoTLS {
+		return net.Listen("tcp", target)
+	}
+	cert, err := tls.LoadX509KeyPair(config.PubCert, config.PrivKey)
 	if err != nil {
 		return nil, err
 	}
-	s := &server{
-		listener: listener,
-	}
-	for _, applyOpt := range opts {
-		applyOpt(s)
-	}
-	return s, nil
+	return tls.Listen("tcp", target, &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	})
 }
 
-func NewTLSServer(config *Configuration, opts ...Option) (Server, error) {
-	conf, err := tlsConfig(config)
-	if err != nil {
-		return nil, err
-	}
+func NewServer(config *Configuration, opts ...Option) (Server, error) {
 	target := net.JoinHostPort(config.Hostname, config.Port)
-	listener, err := tls.Listen("tcp", target, conf)
+	listener, err := getListener(target, config)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +77,12 @@ func WithHTTP(h libhttp.Server) Option {
 func WithGRPC(g *grpc.Server) Option {
 	return func(s *server) {
 		s.grpcServer = g
+	}
+}
+
+func WithListener(l net.Listener) Option {
+	return func(s *server) {
+		s.listener = l
 	}
 }
 

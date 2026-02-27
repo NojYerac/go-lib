@@ -4,47 +4,24 @@ The **transport** package provides a simple HTTP server and gRPC server wrappers
 
 ## Configuration
 
-```go
-// pkg/transport/config.go
-package transport
-
-// Configuration holds server settings.
-//
-//   Host   string `config:"transport_host"`
-//   Port   int    `config:"transport_port"`
-//   TLS    bool   `config:"transport_tls"`
-//   Cert   string `config:"transport_cert"`
-//   Key    string `config:"transport_key"`
-```
-
-### HTTP Server
-
-```go
-func NewHTTPServer(cfg *Configuration) (*http.Server, error) {
-    // Build and return an *http.Server based on cfg.
-}
-```
+- Hostname `hostname` default `0.0.0.0`
+- Port `port` default `80`
+- NoTLS `no_tls` default `false`
+- PubCert `tls_public_cert`
+- PrivKey `tls_private_key`
+- RootCA `tls_root_ca`
 
 ## Usage
 
 ```go
-import (
-    "github.com/nojyerac/go-lib/transport"
-)
-
-func main() {
-    cfg := transport.NewConfiguration()
-    srv, err := transport.NewHTTPServer(cfg)
-    if err != nil {
-        log.Fatal().Err(err).Msg("transport init")
-    }
-    log.Info().Msg("server listening")
-    srv.ListenAndServe()
+// create http server `h`
+cfg := transport.NewConfiguration()
+srv, err := transport.NewServer(cfg, transport.WithHTTP(h))
+if err != nil {
+    log.Fatal("transport init")
 }
+log.Info("server listening")
+ctx, cancel = context.WithCancel(context.Background())
+srv.Start(ctx)
+// cancel context to stop srv
 ```
-
-## Examples
-
-- Set up a basic health‑check endpoint.
-- Serve static assets.
-- Add middleware for logging and metrics.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
+	"net"
 	nethttp "net/http"
 	"time"
 
@@ -39,7 +40,7 @@ var _ = Describe("transport", func() {
 			},
 		}
 		ctx, cancel = context.WithCancel(context.Background())
-		ctx = log.WithLogger(ctx, log.NewLogger(log.NewConfiguration()))
+		ctx = log.WithLogger(ctx, log.NewLogger(log.TestConfig))
 	})
 	AfterEach(func() {
 		cancel()
@@ -50,7 +51,7 @@ var _ = Describe("transport", func() {
 			config = &Configuration{
 				NoTLS:    true,
 				Hostname: "0.0.0.0",
-				Port:     "8080",
+				Port:     "9999",
 			}
 			h = http.NewServer(&http.Configuration{})
 			g = libgrpc.NewServer(
@@ -73,7 +74,7 @@ var _ = Describe("transport", func() {
 			time.Sleep(200 * time.Millisecond)
 		})
 		It("routes to httpServer", func() {
-			req, err := nethttp.NewRequest("GET", "http://localhost:8080/livez", nethttp.NoBody)
+			req, err := nethttp.NewRequest("GET", "http://localhost:9999/livez", nethttp.NoBody)
 			Expect(err).NotTo(HaveOccurred())
 			res, err := httpClient.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -84,7 +85,7 @@ var _ = Describe("transport", func() {
 		})
 		It("routes grpc requests", func() {
 			cc, err := grpc.NewClient(
-				"localhost:8080",
+				net.JoinHostPort(config.Hostname, config.Port),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 			)
 			Expect(err).NotTo(HaveOccurred())
@@ -97,11 +98,11 @@ var _ = Describe("transport", func() {
 		})
 	})
 
-	Context("NewTLSServer", func() {
+	Context("NewServer with TLS", func() {
 		BeforeEach(func() {
 			config = &Configuration{
 				Hostname: "0.0.0.0",
-				Port:     "8443",
+				Port:     "9999",
 				PubCert:  "testdata/pub.crt",
 				PrivKey:  "testdata/priv.key",
 				RootCA:   "testdata/ca.crt",
@@ -113,19 +114,16 @@ var _ = Describe("transport", func() {
 			)
 		})
 		JustBeforeEach(func() {
-			s, err = NewTLSServer(config, WithHTTP(h), WithGRPC(g))
+			s, err = NewServer(config, WithHTTP(h), WithGRPC(g))
 			Expect(err).NotTo(HaveOccurred())
 
 			go func() {
 				defer GinkgoRecover()
 				Expect(s.Start(ctx)).To(Succeed())
 			}()
-
-			// Give cmux a moment to start accepting connections
-			time.Sleep(200 * time.Millisecond)
 		})
 		It("routes to httpServer", func() {
-			req, err := nethttp.NewRequest("GET", "https://localhost:8443/livez", nethttp.NoBody)
+			req, err := nethttp.NewRequest("GET", "https://localhost:9999/livez", nethttp.NoBody)
 			Expect(err).NotTo(HaveOccurred())
 			res, err := httpClient.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -136,7 +134,7 @@ var _ = Describe("transport", func() {
 		})
 		XIt("routes grpc requests", func() {
 			cc, err := libgrpc.ClientConn(
-				"localhost:8443",
+				net.JoinHostPort(config.Hostname, config.Port),
 				libgrpc.WithDialOptions(
 					grpc.WithTransportCredentials(insecure.NewCredentials()), //nolint:gosec //testing
 				),
