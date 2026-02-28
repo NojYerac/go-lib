@@ -1,27 +1,53 @@
 # Transport Package
 
-The **transport** package provides a simple HTTP server and gRPC server wrappers, along with helper functions for creating middleware and handlers.
+The `transport` package runs HTTP and gRPC servers on one listener using `cmux`.
 
 ## Configuration
 
-- Hostname `hostname` default `0.0.0.0`
-- Port `port` default `80`
-- NoTLS `no_tls` default `false`
-- PubCert `tls_public_cert`
-- PrivKey `tls_private_key`
-- RootCA `tls_root_ca`
+```go
+type Configuration struct {
+    NoTLS    bool   `config:"no_tls"`
+    PubCert  string `config:"tls_public_cert" validate:"required_unless=NoTLS true"`
+    PrivKey  string `config:"tls_private_key" validate:"required_unless=NoTLS true"`
+    RootCA   string `config:"tls_root_ca"`
+    Hostname string `config:"hostname" validate:"required,hostname_rfc1123"`
+    Port     string `config:"port" validate:"required,numeric,min=1,max=65535"`
+}
+```
 
-## Usage
+`NewConfiguration()` defaults:
+
+- `Hostname: "0.0.0.0"`
+- `Port: "80"`
+
+## API
+
+- `NewServer(config, opts...) (Server, error)`
+- `WithHTTP(http.Server)`
+- `WithGRPC(*grpc.Server)`
+- `WithListener(net.Listener)`
+- `Server.Start(context.Context) error`
+
+`Start` blocks until context cancellation, then gracefully stops the gRPC server
+and closes listeners.
+
+## Example (HTTP + gRPC)
 
 ```go
-// create http server `h`
+h := transporthttp.NewServer(transporthttp.NewConfiguration())
+g := transportgrpc.NewServer(func(s *grpc.Server) {
+    pb.RegisterMyServiceServer(s, myImpl)
+})
+
 cfg := transport.NewConfiguration()
-srv, err := transport.NewServer(cfg, transport.WithHTTP(h))
+cfg.NoTLS = true
+cfg.Port = "8080"
+
+srv, err := transport.NewServer(cfg, transport.WithHTTP(h), transport.WithGRPC(g))
 if err != nil {
-    log.Fatal("transport init")
+    panic(err)
 }
-log.Info("server listening")
-ctx, cancel = context.WithCancel(context.Background())
-srv.Start(ctx)
-// cancel context to stop srv
+if err := srv.Start(ctx); err != nil {
+    panic(err)
+}
 ```
