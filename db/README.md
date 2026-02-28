@@ -1,14 +1,13 @@
-# db Package
+# DB Package
 
-The `db` package provides utilities for configuring and initializing a database client. It supports PostgreSQL as the default driver and offers flexible options for logging and health checking.
+The `db` package wraps `sqlx` with:
 
----
+- tracing spans per database operation
+- structured operation logs
+- OpenTelemetry metrics for query duration and pool state
+- optional health check registration
 
 ## Configuration
-
-Configuration is defined in `pkg/db/config.go`. The struct contains fields for driver, connection string, pool limits and idle settings.
-
-[`db.Configuration`](pkg/db/config.go:11)
 
 ```go
 type Configuration struct {
@@ -21,61 +20,66 @@ type Configuration struct {
 }
 ```
 
-Create a default configuration using:
+`NewConfiguration()` defaults `Driver` to `postgres`.
+
+## API
+
+### `NewDatabase(config *Configuration, opts ...Option) Database`
+
+Returns a `Database` implementation.
+
+### `type Database interface`
+
+- `Open(context.Context) error`
+- `Close() error`
+- `Begin(context.Context) (Tx, error)`
+- `Select/Get/Exec/Query` (from `DataInterface`)
+
+### `type Tx interface`
+
+- `Commit(context.Context) error`
+- `Rollback(context.Context) error`
+- `Select/Get/Exec/Query`
+
+### Options
+
+- `WithLogger(logrus.FieldLogger)`
+- `WithHealthChecker(health.Checker)`
+
+## Metrics
+
+When opened, the package registers:
+
+- `database_query_duration` (ms histogram)
+- `database_open_conns` (observable gauge)
+- `database_idle_conns` (observable gauge)
+
+## Example
 
 ```go
 cfg := db.NewConfiguration()
-```
+cfg.DBConnStr = "postgres://user:pass@localhost:5432/app?sslmode=disable"
 
-The returned configuration defaults to the PostgreSQL driver:
+conn := db.NewDatabase(cfg, db.WithLogger(logger), db.WithHealthChecker(checker))
+if err := conn.Open(ctx); err != nil {
+    panic(err)
+}
+defer conn.Close()
 
-```go
-Driver: "postgres"
-```
+var rows []MyRow
+if err := conn.Select(ctx, &rows, "SELECT id, name FROM items"); err != nil {
+    panic(err)
+}
 
----
-
-## Options
-
-The package exposes functional options to customize behaviour.
-
-- [`WithLogger`](pkg/db/config.go:28): injects a `zerolog.Logger` instance.
-- [`WithHealthChecker`](pkg/db/config.go:34): injects a health checker that implements the `health.Checker` interface.
-
-## Usage
-
-A typical usage pattern is:
-
-```go
-import (
-    "os"
-
-    "github.com/nojyerac/go-lib/db"
-    "github.com/rs/zerolog"
-    "github.com/nojyerac/go-lib/health"
-)
-
-func main() {
-    cfg := db.NewConfiguration()
-    
-    // use config loader to read in vars
-    // create logger & health checker
-
-    database, err := db.NewDatabse(cfg, db.WithLogger(l), db.WithHealthChecker(h))
-    if err != nil {
-        // handle error
-    }
-    go func() {
-        if err = database.Start(ctx); err != nil {
-            // handle error
-        }
-    }
-
-    // use database connection
+tx, err := conn.Begin(ctx)
+if err != nil {
+    panic(err)
+}
+if _, err := tx.Exec(ctx, "UPDATE items SET seen = true"); err != nil {
+    _ = tx.Rollback(ctx)
+    panic(err)
+}
+if err := tx.Commit(ctx); err != nil {
+    panic(err)
 }
 ```
-
-## Examples
-
-- **Connecting to a PostgreSQL database** – see `examples/postgres/main.go` (if present).
-- **Using a mock client** – the `internal/mocks/db` package contains a mock implementation that can be used in tests.

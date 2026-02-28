@@ -1,60 +1,82 @@
 # Config Package
 
-The **config** package provides a flexible configuration loader that supports environment variables, flags, and file‑based configuration (YAML, JSON, TOML, etc.). It is used by many other packages in the library.
+The `config` package loads and validates configuration structs from:
 
-## Configuration
+- environment variables
+- command-line flags
+- config files in a directory (any file name containing `config.`)
 
-The package defines a `Configuration` struct used to hold common config values:
+It uses `config` tags for field mapping and `validate` tags for validation.
 
-- `config_dir`: Use the `-c` flag to set the directory to search for configuration files.
-- `log_config_on_init`: **Warning this may leak secrets** Set to `True` to log the full configuration during initialization
+## API
 
-The `NewConfigLoader` function creates a `Loader` that can be used to register structs and initialise configuration with options:
+### `type Loader interface`
 
-- `WithArgs`: allows for testing by overriding the actual os.Args array with mock values
-- `WithLogger`: override the default logger.
+- `RegisterConfig(interface{}) error`
+- `InitAndValidate() error`
 
-### Custom Validators
+### `NewConfigLoader(prefix string, opts ...Option) Loader`
 
-Custom validation functions can be added via `RegisterCustomValidator(tag string, fn validator.Func)`.
+Creates a loader with:
 
-## Usage
+- environment prefix (`prefix`)
+- built-in base config (`config.Configuration`)
+- default `config_dir` of `./config`
 
-1. **Create a configuration struct** (can be a custom struct with `config` tags).
-2. **Register the struct** with the loader.
-3. **Call `InitAndValidate()`** to load from env/flags/files.
-4. The struct is populated and ready to use.
+### Base Config
 
-## Examples
+```go
+type Configuration struct {
+    LogConfigOnInit bool   `config:"log_config_on_init"`
+    ConfigPath      string `config:"config_dir" flag:"configs,c" validate:"dir"`
+}
+```
+
+`log_config_on_init=true` logs all loaded settings and can expose sensitive values.
+
+### Options
+
+- `WithArgs(args ...string)`: replace `os.Args` (mainly useful in tests).
+- `WithLogger(l *logrus.Logger)`: set loader logger.
+
+## Tag Behavior
+
+- `config:"name"`: binds env + file key + (optional) flag to a field.
+- `flag:"name,short,usage"`: registers a pflag and binds it.
+- `validate:"..."`: validated using `go-playground/validator` after load.
+
+Built-in custom validation tags included in this package:
+
+- `pub_key`
+- `priv_ec_key`
+
+## Example
 
 ```go
 package main
 
-import (
-  "github.com/nojyerac/go-lib/config"
-)
+import "github.com/nojyerac/go-lib/config"
 
-// create configuration with types, variable names, and validation.
-type Configuration struct {
-  ExporterType string  `config:"trace_exporter_type" validate:"oneof=jaeger stdout file noop"`
-  SampleRatio  float64 `config:"trace_sample_ratio" validate:"required_if=ExporterType jaeger,max=1,min=0"`
-  FilePath     string  `config:"trace_file_path" validate:"omitempty,required_if=ExporterType file,file"`
-}
-
-// create a configuration (pointer to struct) with defaults.
-func NewConfiguration() *Configuration {
-  return &Configuration{
-    ExporterType: "stdout",
-    SampleRatio:  0.5,
-  }
+type DBConfig struct {
+    Driver string `config:"database_driver" validate:"required"`
+    DSN    string `config:"database_connection_string" validate:"required"`
 }
 
 func main() {
-  cfg := NewConfiguration()
-  loader := config.NewConfigLoader("example") // env var names are prefixed with EXAMPLE_
-  loader.RegisterConfig(cfg)
-  if err := loader.InitAndValidate(); err != nil {
-      panic(err)
-  }
+    cfg := &DBConfig{Driver: "postgres"}
+
+    loader := config.NewConfigLoader("example") // EXAMPLE_* env vars
+    if err := loader.RegisterConfig(cfg); err != nil {
+        panic(err)
+    }
+    if err := loader.InitAndValidate(); err != nil {
+        panic(err)
+    }
 }
 ```
+
+## Notes
+
+- `RegisterConfig` expects `pointer to struct`; any other type returns an error.
+- Load + validate runs for every registered struct.
+- The loader parses flags during `InitAndValidate()`.
