@@ -8,6 +8,7 @@ import (
 
 	"github.com/nojyerac/go-lib/auth"
 	"github.com/nojyerac/go-lib/authz"
+	"github.com/nojyerac/go-lib/log"
 	. "github.com/nojyerac/go-lib/transport/http"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -45,6 +46,7 @@ var _ = Describe("Auth middleware", func() {
 		s = NewServer(
 			&Configuration{},
 			WithAuthMiddleware(stubVal, policies),
+			WithLogger(log.NewLogger(log.TestConfig)),
 		)
 		s.HandleFunc("GET /public", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)

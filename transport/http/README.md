@@ -1,4 +1,3 @@
-````markdown
 # Transport HTTP Package
 
 The `transport/http` package wraps `net/http` with:
@@ -75,5 +74,3 @@ h := transporthttp.NewServer(
     transporthttp.WithAuthMiddleware(validator, policies),
 )
 ```
-
-````

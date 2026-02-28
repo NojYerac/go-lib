@@ -1,4 +1,3 @@
-````markdown
 # Transport gRPC Package
 
 The `transport/grpc` package provides opinionated gRPC client/server setup with
@@ -52,5 +51,3 @@ if err != nil {
 }
 defer conn.Close()
 ```
-
-````
