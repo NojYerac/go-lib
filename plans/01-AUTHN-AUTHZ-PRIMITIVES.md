@@ -45,6 +45,23 @@ Provide shared auth and RBAC primitives that can be dropped into any service usi
 3. **A3** gRPC interceptors + integration tests.
 4. **A4** shared endpoint-role mapping + docs examples.
 
+## Implementation Status (Draft)
+
+- [x] **A1** token validator + claims model + tests.
+- [x] **A2** HTTP middleware + integration tests.
+- [x] **A3** gRPC interceptors + integration tests.
+- [x] **A4** shared endpoint-role mapping + docs examples.
+
+### Notes
+
+- HTTP integration: `transport/http.WithAuthMiddleware(validator, policies)`.
+- gRPC integration: `transport/grpc.AuthServerOptions(validator, policies)` for
+  unary + stream interceptor registration.
+- Policy keys are normalized through `authz.HTTPOperation` and
+  `authz.GRPCOperation`.
+- Error mapping remains transport-neutral via `auth.HTTPStatus` and
+  `auth.GRPCCode`.
+
 ## Acceptance Criteria
 
 - Requests with missing/invalid tokens are rejected consistently.
