@@ -89,6 +89,7 @@ func main() {
 
 ## Available Packages
 
+- [auth](./auth/README.md)
 - [config](./config/README.md)
 - [db](./db/README.md)
 - [health](./health/README.md)
