@@ -161,7 +161,7 @@ func (s *server) telemetryMiddleware() func(http.Handler) http.Handler {
 				"path":       r.URL.Path,
 				"remoteAddr": r.RemoteAddr,
 				"userAgent":  r.UserAgent(),
-			}).Logger
+			})
 			r = r.WithContext(log.WithLogger(ctx, l))
 			lrw := &loggingResponseWriter{ResponseWriter: w, StatusCode: http.StatusOK}
 			// handle the request
