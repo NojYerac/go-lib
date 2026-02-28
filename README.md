@@ -100,6 +100,10 @@ func main() {
   - [grpc](./transport/grpc/README.md)
 - [version](./version/README.md)
 
+## Roadmap
+
+- [go-lib roadmap](./ROADMAP.md)
+
 ## Developer Guide
 
 ### Requirements
