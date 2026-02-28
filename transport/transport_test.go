@@ -8,6 +8,8 @@ import (
 	nethttp "net/http"
 	"time"
 
+	"github.com/nojyerac/go-lib/auth"
+	"github.com/nojyerac/go-lib/authz"
 	"github.com/nojyerac/go-lib/log"
 	. "github.com/nojyerac/go-lib/transport"
 	libgrpc "github.com/nojyerac/go-lib/transport/grpc"
@@ -15,8 +17,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	pb "google.golang.org/grpc/examples/features/proto/echo"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("transport", func() {
@@ -41,6 +46,111 @@ var _ = Describe("transport", func() {
 		}
 		ctx, cancel = context.WithCancel(context.Background())
 		ctx = log.WithLogger(ctx, log.NewLogger(log.TestConfig))
+	})
+
+	Context("NewServer with auth-enabled transports", func() {
+		BeforeEach(func() {
+			config = &Configuration{
+				NoTLS:    true,
+				Hostname: "0.0.0.0",
+				Port:     "9998",
+			}
+
+			validator := &authValidatorStub{}
+			httpPolicies := authz.NewPolicyMap()
+			httpPolicies.Set(authz.HTTPOperation(nethttp.MethodGet, "/api/private"), authz.RequireAny("reader"))
+
+			h = http.NewServer(
+				&http.Configuration{},
+				http.WithAuthMiddleware(validator, httpPolicies),
+				http.WithLogger(log.NewLogger(log.TestConfig)),
+			)
+			h.HandleFunc("GET /private", func(w nethttp.ResponseWriter, r *nethttp.Request) {
+				claims, ok := auth.FromContext(r.Context())
+				if !ok {
+					w.WriteHeader(nethttp.StatusInternalServerError)
+					return
+				}
+				w.WriteHeader(nethttp.StatusOK)
+				_, _ = w.Write([]byte(claims.Subject))
+			})
+
+			grpcPolicies := authz.NewPolicyMap()
+			grpcPolicies.Set(authz.GRPCOperation("/grpc.examples.echo.Echo/UnaryEcho"), authz.RequireAny("reader"))
+
+			g = libgrpc.NewServer(
+				func(s *grpc.Server) { pb.RegisterEchoServer(s, &echoSrv{}) },
+				append(
+					libgrpc.AuthServerOptions(validator, grpcPolicies),
+					grpc.Creds(insecure.NewCredentials()), //nolint:gosec //testing
+				)...,
+			)
+		})
+
+		JustBeforeEach(func() {
+			s, err = NewServer(config, WithHTTP(h), WithGRPC(g))
+			Expect(err).NotTo(HaveOccurred())
+
+			go func() {
+				defer GinkgoRecover()
+				Expect(s.Start(ctx)).To(Succeed())
+			}()
+
+			time.Sleep(200 * time.Millisecond)
+		})
+
+		It("returns 401 for protected HTTP route without token", func() {
+			req, reqErr := nethttp.NewRequest("GET", "http://localhost:9998/api/private", nethttp.NoBody)
+			Expect(reqErr).NotTo(HaveOccurred())
+
+			res, doErr := httpClient.Do(req)
+			Expect(doErr).NotTo(HaveOccurred())
+			defer res.Body.Close()
+			Expect(res.StatusCode).To(Equal(nethttp.StatusUnauthorized))
+		})
+
+		It("allows protected HTTP route with bearer token", func() {
+			req, reqErr := nethttp.NewRequest("GET", "http://localhost:9998/api/private", nethttp.NoBody)
+			Expect(reqErr).NotTo(HaveOccurred())
+			req.Header.Set("Authorization", "Bearer good")
+
+			res, doErr := httpClient.Do(req)
+			Expect(doErr).NotTo(HaveOccurred())
+			defer res.Body.Close()
+
+			body, bodyErr := io.ReadAll(res.Body)
+			Expect(bodyErr).NotTo(HaveOccurred())
+			Expect(res.StatusCode).To(Equal(nethttp.StatusOK))
+			Expect(body).To(Equal([]byte("auth-user")))
+		})
+
+		It("returns Unauthenticated for protected gRPC method without token", func() {
+			cc, dialErr := grpc.NewClient(
+				net.JoinHostPort(config.Hostname, config.Port),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+			Expect(dialErr).NotTo(HaveOccurred())
+			defer cc.Close()
+
+			client := pb.NewEchoClient(cc)
+			_, callErr := client.UnaryEcho(context.Background(), &pb.EchoRequest{Message: "echo"})
+			Expect(status.Code(callErr)).To(Equal(codes.Unauthenticated))
+		})
+
+		It("allows protected gRPC method with bearer token", func() {
+			cc, dialErr := grpc.NewClient(
+				net.JoinHostPort(config.Hostname, config.Port),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+			)
+			Expect(dialErr).NotTo(HaveOccurred())
+			defer cc.Close()
+
+			client := pb.NewEchoClient(cc)
+			rpcCtx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("authorization", "Bearer good"))
+			res, callErr := client.UnaryEcho(rpcCtx, &pb.EchoRequest{Message: "echo"})
+			Expect(callErr).NotTo(HaveOccurred())
+			Expect(res.Message).To(Equal("echo"))
+		})
 	})
 	AfterEach(func() {
 		cancel()
@@ -152,6 +262,15 @@ var _ = Describe("transport", func() {
 
 type echoSrv struct {
 	pb.UnimplementedEchoServer
+}
+
+type authValidatorStub struct{}
+
+func (s *authValidatorStub) Validate(_ context.Context, token string) (*auth.Claims, error) {
+	if token != "good" {
+		return nil, auth.ErrInvalidToken
+	}
+	return &auth.Claims{Subject: "auth-user", Roles: []string{"reader"}}, nil
 }
 
 func (e *echoSrv) UnaryEcho(_ context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {

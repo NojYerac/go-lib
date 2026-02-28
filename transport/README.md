@@ -51,3 +51,32 @@ if err := srv.Start(ctx); err != nil {
     panic(err)
 }
 ```
+
+## Example (HTTP + gRPC with AuthN/AuthZ)
+
+```go
+validator := auth.NewValidator(authConfig)
+
+httpPolicies := authz.NewPolicyMap()
+httpPolicies.Set(authz.HTTPOperation("GET", "/api/orders"), authz.RequireAny("reader", "admin"))
+
+grpcPolicies := authz.NewPolicyMap()
+grpcPolicies.Set(authz.GRPCOperation("/orders.v1.Orders/GetOrder"), authz.RequireAny("reader", "admin"))
+
+h := transporthttp.NewServer(
+    transporthttp.NewConfiguration(),
+    transporthttp.WithAuthMiddleware(validator, httpPolicies),
+)
+
+g := transportgrpc.NewServer(func(s *grpc.Server) {
+    pb.RegisterOrdersServer(s, impl)
+}, transportgrpc.AuthServerOptions(validator, grpcPolicies)...)
+
+srv, err := transport.NewServer(cfg, transport.WithHTTP(h), transport.WithGRPC(g))
+if err != nil {
+    panic(err)
+}
+if err := srv.Start(ctx); err != nil {
+    panic(err)
+}
+```

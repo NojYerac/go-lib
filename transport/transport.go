@@ -48,6 +48,7 @@ func getListener(target string, config *Configuration) (net.Listener, error) {
 	}
 	return tls.Listen("tcp", target, &tls.Config{
 		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
 	})
 }
 

@@ -23,6 +23,11 @@ Returns a server implementing:
 - `WithMetricsHandler(http.Handler)`
 - `WithLogger(logrus.FieldLogger)`
 - `WithMiddleware(func(http.Handler) http.Handler)`
+- `WithAuthMiddleware(auth.Validator, authz.PolicyMap)`
+
+`WithAuthMiddleware` enforces auth only for operations present in the provided
+policy map. Missing/invalid tokens map to `401`, and failed role checks map to
+`403`.
 
 ## Routes
 
@@ -56,4 +61,16 @@ h.HandleFunc("GET /orders", func(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     _, _ = w.Write([]byte("[]"))
 })
+```
+
+## Auth Example
+
+```go
+policies := authz.NewPolicyMap()
+policies.Set(authz.HTTPOperation("GET", "/api/orders"), authz.RequireAny("reader", "admin"))
+
+h := transporthttp.NewServer(
+    transporthttp.NewConfiguration(),
+    transporthttp.WithAuthMiddleware(validator, policies),
+)
 ```
