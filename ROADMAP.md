@@ -11,6 +11,7 @@ are now split into individual files under [plans](./plans/README.md).
 4. [Plan 03: Operations Hardening](./plans/03-OPERATIONS-HARDENING.md)
 5. [Plan 04: One-Click Scaffold a New Service](./plans/04-SCAFFOLD-NEW-SERVICE.md)
 6. [Plan 05: CI/Release Templates and SDK Utilities](./plans/05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md)
+7. [Plan 06: HTTP Client Primitives](./plans/06-HTTP-CLIENT-PRIMITIVES.md)
 
 ## Definition of Done (Roadmap)
 

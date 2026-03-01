@@ -10,6 +10,7 @@ This directory tracks implementation plans for missing library functionality.
 4. [03-OPERATIONS-HARDENING.md](./03-OPERATIONS-HARDENING.md)
 5. [04-SCAFFOLD-NEW-SERVICE.md](./04-SCAFFOLD-NEW-SERVICE.md)
 6. [05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md](./05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md)
+7. [06-HTTP-CLIENT-PRIMITIVES.md](./06-HTTP-CLIENT-PRIMITIVES.md)
 
 ## Prioritization
 
@@ -21,6 +22,7 @@ Recommended implementation order:
 4. Operations hardening
 5. One-click service scaffolding
 6. CI/release templates and SDK support utilities
+7. HTTP client primitives
 
 ## Notes
 
