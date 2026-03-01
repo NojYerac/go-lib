@@ -6,9 +6,10 @@ This directory tracks implementation plans for missing library functionality.
 
 1. [01-AUTHN-AUTHZ-PRIMITIVES.md](./01-AUTHN-AUTHZ-PRIMITIVES.md)
 2. [02-AUDIT-EVENT-PRIMITIVES.md](./02-AUDIT-EVENT-PRIMITIVES.md)
-3. [03-OPERATIONS-HARDENING.md](./03-OPERATIONS-HARDENING.md)
-4. [04-SCAFFOLD-NEW-SERVICE.md](./04-SCAFFOLD-NEW-SERVICE.md)
-5. [05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md](./05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md)
+3. [02A-EXTERNAL-AUDIT-LOGGING-PRIMITIVES.md](./02A-EXTERNAL-AUDIT-LOGGING-PRIMITIVES.md)
+4. [03-OPERATIONS-HARDENING.md](./03-OPERATIONS-HARDENING.md)
+5. [04-SCAFFOLD-NEW-SERVICE.md](./04-SCAFFOLD-NEW-SERVICE.md)
+6. [05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md](./05-CI-RELEASE-TEMPLATES-AND-SDK-UTILS.md)
 
 ## Prioritization
 
@@ -16,9 +17,10 @@ Recommended implementation order:
 
 1. AuthN/AuthZ primitives
 2. Audit event primitives
-3. Operations hardening
-4. One-click service scaffolding
-5. CI/release templates and SDK support utilities
+3. External audit logging primitives
+4. Operations hardening
+5. One-click service scaffolding
+6. CI/release templates and SDK support utilities
 
 ## Notes
 

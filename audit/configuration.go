@@ -1,37 +1,29 @@
 package audit
 
-const (
-	DefaultMaxDetailsBytes = 4 * 1024
-	DefaultPageSize        = 50
-	DefaultMaxPageSize     = 200
-)
+import "io"
 
 type Configuration struct {
-	MaxDetailsBytes int
-	DefaultPageSize int
-	MaxPageSize     int
+	AuditLoggerType string `config:"audit_logger_type" validate:"required,oneof=noop stdout"`
 }
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
-		MaxDetailsBytes: DefaultMaxDetailsBytes,
-		DefaultPageSize: DefaultPageSize,
-		MaxPageSize:     DefaultMaxPageSize,
+		AuditLoggerType: "noop",
 	}
 }
 
-func (c *Configuration) normalizePageLimit(limit int) int {
-	if c == nil {
-		c = NewConfiguration()
-	}
+type Option func(*options)
 
-	if limit <= 0 {
-		limit = c.DefaultPageSize
-	}
+type options struct {
+	output io.Writer
+}
 
-	if c.MaxPageSize > 0 && limit > c.MaxPageSize {
-		return c.MaxPageSize
+// WithOutput sets the destination writer for logger output.
+func WithOutput(output io.Writer) Option {
+	return func(options *options) {
+		if options == nil {
+			return
+		}
+		options.output = output
 	}
-
-	return limit
 }

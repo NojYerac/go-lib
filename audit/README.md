@@ -1,93 +1,42 @@
 # Audit Package
 
-The `audit` package provides reusable audit event primitives and contracts for
-writing and querying audit records consistently across services.
+The `audit` package now exposes a minimal API:
+
+```go
+logger, err := audit.NewAuditLogger(audit.NewConfiguration())
+if err != nil {
+    return err
+}
+
+err = logger.Log(ctx, "user.login", map[string]any{"user_id": "u-1"})
+```
 
 ## API
 
-### Event model
-
 ```go
-type Event struct {
-    ID        string
-    Action    string
-    Actor     Actor
-    Resource  Resource
-    Timestamp time.Time
-    Details   map[string]any
+type AuditLogger interface {
+    Log(ctx context.Context, action string, details map[string]any) error
 }
+
+func NewAuditLogger(cfg *Configuration, options ...Option) (AuditLogger, error)
+
+func WithOutput(output io.Writer) Option
 ```
 
-Validation helper:
+## Current implementation
 
-- `ValidateEvent(event, cfg)`
+Supported logger types (`Configuration.AuditLoggerType`):
 
-### Bounded payload helper
+- `noop`
+- `stdout`
 
-- `MarshalBoundedJSON(payload, maxBytes)` marshals payload and enforces a max
-  serialized size.
+`stdout` pretty-prints each audit event as indented JSON to stdout by default.
+Use `WithOutput(...)` to redirect output to a custom `io.Writer`.
 
-### Compact diff helper
+No-op behavior:
 
-- `CompactDiff(before, after)` returns only changed/added/removed keys as
-  `map[string]Change`.
+- `NewAuditLogger(...)` returns a logger that accepts all calls.
+- `Log(...)` always returns `nil`.
 
-### Interfaces
-
-```go
-type Writer interface {
-    Append(ctx context.Context, event *Event, opts AppendOptions) error
-}
-
-type Reader interface {
-    List(ctx context.Context, opts *ListOptions) (ListResult, error)
-}
-```
-
-The writer includes `AppendOptions.TransactionID` so callers can carry
-transaction context when persisting audit events atomically with business
-mutations.
-
-### In-memory implementation
-
-- `NewMemoryStore(cfg)` provides an in-memory `Writer` + `Reader`
-  implementation for tests and package-level validation.
-- `List` supports deterministic ordering (`asc` / `desc`) and cursor
-  pagination.
-
-## Example: mutation + audit write
-
-```go
-cfg := audit.NewConfiguration()
-store := audit.NewMemoryStore(cfg)
-
-event := &audit.Event{
-    ID:     "evt-1",
-    Action: "order.update",
-    Actor: audit.Actor{Type: "user", ID: "u-1"},
-    Resource: audit.Resource{Type: "order", ID: "o-1"},
-    Timestamp: time.Now().UTC(),
-    Details: map[string]any{"status": "approved"},
-}
-
-// inside the same application transaction boundary:
-err := store.Append(ctx, event, audit.AppendOptions{TransactionID: txID})
-if err != nil {
-    return err
-}
-```
-
-## Example: query with pagination
-
-```go
-res, err := store.List(ctx, &audit.ListOptions{
-    Filter: audit.Query{Action: "order.update"},
-    Page:   audit.Page{Limit: 50, Order: audit.OrderDesc},
-})
-if err != nil {
-    return err
-}
-
-nextCursor := res.PageInfo.NextCursor
-_ = nextCursor
-```
+This keeps integration friction low while allowing future implementations to be
+added behind the same constructor and interface.
