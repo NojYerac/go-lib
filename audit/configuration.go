@@ -10,7 +10,7 @@ import (
 
 type Configuration struct {
 	AuditLoggerType string `config:"audit_logger_type" validate:"required,oneof=noop stdout http"`
-	AuditLoggerURL  string `config:"audit_logger_url" validate:"required_if=AuditLoggerType http,url"`
+	AuditLoggerURL  string `config:"audit_logger_url" validate:"required_if=AuditLoggerType http,omitempty,url"`
 	MaxPayloadBytes int    `config:"audit_max_payload_bytes" validate:"gte=0"`
 }
 
