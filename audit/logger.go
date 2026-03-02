@@ -169,17 +169,12 @@ func (h *httpAuditLogger) Log(ctx context.Context, actorID, action string, detai
 		return validationErr(err)
 	}
 
-	detailsPayload, err := json.Marshal(evt.Details)
-	if err != nil {
-		return err
-	}
-	if h.maxPayloadBytes > 0 && len(detailsPayload) > h.maxPayloadBytes {
-		return fmt.Errorf("%w: got=%d max=%d", ErrPayloadTooLarge, len(detailsPayload), h.maxPayloadBytes)
-	}
-
 	payload, err := json.Marshal(evt)
 	if err != nil {
 		return err
+	}
+	if h.maxPayloadBytes > 0 && len(payload) > h.maxPayloadBytes {
+		return fmt.Errorf("%w: got=%d max=%d", ErrPayloadTooLarge, len(payload), h.maxPayloadBytes)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.endpoint, bytes.NewReader(payload))

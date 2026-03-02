@@ -17,7 +17,7 @@ type Configuration struct {
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		AuditLoggerType: "noop",
-		MaxPayloadBytes: 4096,
+		MaxPayloadBytes: 4096, // 4 KB default max payload size
 	}
 }
 
