@@ -61,11 +61,7 @@ func NewAuditLogger(cfg *Configuration, opts ...Option) (AuditLogger, error) {
 			maxPayloadBytes: cfg.MaxPayloadBytes,
 		}, nil
 	case "http":
-		baseURL := cfg.AuditLoggerURL
-		if strings.TrimSpace(o.httpBase) != "" {
-			baseURL = o.httpBase
-		}
-		baseURL = strings.TrimSpace(baseURL)
+		baseURL := strings.TrimSpace(cfg.AuditLoggerURL)
 		if baseURL == "" {
 			return nil, fmt.Errorf("audit logger url is required for http logger")
 		}

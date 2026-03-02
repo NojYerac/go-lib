@@ -27,6 +27,10 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
+const (
+	auditLoggerExampleURL = "https://audit.example.test"
+)
+
 var _ = Describe("NewAuditLogger", func() {
 	var (
 		cfg     *Configuration
@@ -102,7 +106,12 @@ var _ = Describe("NewAuditLogger", func() {
 			logger, err = NewAuditLogger(cfg, WithOutput(&out), WithTimeNow(timeNow))
 			Expect(err).NotTo(HaveOccurred())
 
-			err = logger.Log(context.Background(), actorID, "user.login", map[string]any{"blob": "123456789012345678901234567890"})
+			err = logger.Log(
+				context.Background(),
+				actorID,
+				"user.login",
+				map[string]any{"blob": "123456789012345678901234567890"},
+			)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out.String()).To(ContainSubstring("\"action\": \"user.login\""))
 		})
@@ -167,23 +176,8 @@ var _ = Describe("NewAuditLogger", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("uses WithHTTPBaseURL override when provided", func() {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				Expect(r.URL.Path).To(Equal("/api/auditlog"))
-				w.WriteHeader(http.StatusAccepted)
-			}))
-			defer server.Close()
-
-			cfg.AuditLoggerURL = "http://127.0.0.1:1"
-			logger, err = NewAuditLogger(cfg, WithHTTPBaseURL(server.URL), WithTimeNow(timeNow))
-			Expect(err).NotTo(HaveOccurred())
-
-			err = logger.Log(context.Background(), actorID, "user.login", map[string]any{"user_id": "u-1"})
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("uses WithHTTPClient for request execution", func() {
-			cfg.AuditLoggerURL = "https://audit.example.test"
+			cfg.AuditLoggerURL = auditLoggerExampleURL
 			used := false
 			client := &http.Client{
 				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -207,7 +201,7 @@ var _ = Describe("NewAuditLogger", func() {
 		})
 
 		It("enforces bounded payload limit before HTTP post", func() {
-			cfg.AuditLoggerURL = "https://audit.example.test"
+			cfg.AuditLoggerURL = auditLoggerExampleURL
 			cfg.MaxPayloadBytes = 10
 
 			client := &http.Client{
