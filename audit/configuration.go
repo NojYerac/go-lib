@@ -27,7 +27,6 @@ type options struct {
 	validator  *validator.Validate
 	output     io.Writer
 	now        func() time.Time
-	httpBase   string
 	httpClient *http.Client
 }
 
@@ -47,16 +46,6 @@ func WithTimeNow(now func() time.Time) Option {
 			return
 		}
 		options.now = now
-	}
-}
-
-// WithHTTPBaseURL sets the HTTP audit server base URL for the http logger.
-func WithHTTPBaseURL(baseURL string) Option {
-	return func(options *options) {
-		if options == nil {
-			return
-		}
-		options.httpBase = baseURL
 	}
 }
 

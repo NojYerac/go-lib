@@ -39,6 +39,9 @@ Returns `auth.ErrPermissionDenied` when the requirement is not satisfied.
 Use operation keys such as `GET /v1/flags` (HTTP) or
 `/flag.v1.FlagService/GetFlag` (gRPC).
 
+For HTTP policies, path-parameter templates are supported in keys, including
+`{id}` and `:id` segment formats (for example, `GET /v1/flags/{id}`).
+
 ## Example
 
 ```go
