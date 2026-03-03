@@ -1,4 +1,7 @@
-# Plan 05: CI/Release Templates and SDK Support Utilities
+# Plan 05: CI/Release Templates and SDK Support Utilities (PLANNED / STALLED)
+
+## Status
+**Pending Implementation** (Identified as missing in Minerva Audit 2026-03-03; `templates/` directory and SDK helper packages not found)
 
 ## Problem
 

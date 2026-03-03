@@ -45,6 +45,7 @@ func authMiddleware(validator auth.Validator, policies authz.PolicyMap) func(htt
 
 func writeAuthError(w http.ResponseWriter, err error) {
 	status := auth.HTTPStatus(err)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(status)
-	_, _ = w.Write([]byte(http.StatusText(status)))
+	_, _ = w.Write([]byte(http.StatusText(status))) // nolint:gosec // StatusText is a safe fixed string
 }

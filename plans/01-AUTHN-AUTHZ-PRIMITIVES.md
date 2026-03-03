@@ -1,4 +1,7 @@
-# Plan 01: AuthN/AuthZ Primitives
+# Plan 01: AuthN/AuthZ Primitives (DONE)
+
+## Status
+**Completed on 2026-03-03** (Confirmed by Minerva Audit)
 
 ## Problem
 

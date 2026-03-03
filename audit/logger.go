@@ -179,7 +179,7 @@ func (h *httpAuditLogger) Log(ctx context.Context, actorID, action string, detai
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := h.client.Do(req)
+	resp, err := h.client.Do(req) // nolint:gosec // SSRF: h.endpoint is a configured URL for the audit logger.
 	if err != nil {
 		return err
 	}

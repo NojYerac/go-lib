@@ -6,11 +6,11 @@ import (
 )
 
 type TestConfiguration struct {
-	PrivateKey string `validate:"priv_ec_key"`
-	PublicKey  string `validate:"pub_key"`
+	PrivateKey string `validate:"priv_ec_key"` // nolint:gosec // testing credentials
+	PublicKey  string `validate:"pub_key"`     // nolint:gosec // testing credentials
 }
 
-var testConfig = &TestConfiguration{
+var testConfig = &TestConfiguration{ // nolint:gosec // testing credentials
 	PrivateKey: `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIA4WF79lBYQCjjIOunx5N75WdqstUwI4XYIqLZSxyJtqoAoGCCqGSM49
 AwEHoUQDQgAEyViEkF0WSOVwYcISC9bokDxVVibYftwFC/YY3Q3oXDX0iAD3waIm

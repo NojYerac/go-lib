@@ -1,4 +1,7 @@
-# Plan 04: One-Click Scaffold a New Service
+# Plan 04: One-Click Scaffold a New Service (PLANNED / STALLED)
+
+## Status
+**Pending Implementation** (Identified as missing in Minerva Audit 2026-03-03; `go-lib/scaffold/` does not exist)
 
 ## Problem
 
