@@ -117,39 +117,6 @@ var _ = Describe("NewAuditLogger", func() {
 		})
 	})
 
-	Describe("Slog Logger", func() {
-		BeforeEach(func() {
-			out.Reset()
-			cfg = NewConfiguration()
-			cfg.AuditLoggerType = "slog"
-		})
-
-		It("logs json using slog to configured output", func() {
-			err = logger.LogChange(context.Background(), actorID, "user.update", map[string]any{"user_id": "u-1"}, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			payload := out.String()
-			var logData map[string]any
-			Expect(json.Unmarshal([]byte(payload), &logData)).To(Succeed())
-
-			Expect(logData["msg"]).To(Equal("audit_log"))
-			Expect(logData["level"]).To(Equal("INFO"))
-			Expect(logData["actor_id"]).To(Equal(actorID))
-			Expect(logData["action"]).To(Equal("user.update"))
-
-			details, ok := logData["details"].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(details).To(HaveKey("user_id"))
-
-			Expect(logData).To(HaveKey("timestamp"))
-		})
-
-		It("returns validation error for invalid event", func() {
-			err = logger.Log(context.Background(), "bad-actor-id", "user.login", map[string]any{"user_id": "u-1"})
-			Expect(err).To(MatchError(ErrInvalidEventActorID))
-		})
-	})
-
 	Describe("HTTP Logger", func() {
 		BeforeEach(func() {
 			out.Reset()

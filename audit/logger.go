@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -60,11 +59,6 @@ func NewAuditLogger(cfg *Configuration, opts ...Option) (AuditLogger, error) {
 			output:          o.output,
 			now:             o.now,
 			maxPayloadBytes: cfg.MaxPayloadBytes,
-		}, nil
-	case "slog":
-		return &slogAuditLogger{
-			v:      o.validator,
-			logger: slog.New(slog.NewJSONHandler(o.output, nil)),
 		}, nil
 	case "http":
 		baseURL := strings.TrimSpace(cfg.AuditLoggerURL)
@@ -142,38 +136,6 @@ func (s *stdoutAuditLogger) Log(_ context.Context, actorID, action string, detai
 	if _, err := s.output.Write([]byte("\n")); err != nil {
 		return err
 	}
-
-	return nil
-}
-
-type slogAuditLogger struct {
-	v      *validator.Validate
-	logger *slog.Logger
-}
-
-func (s *slogAuditLogger) LogChange(ctx context.Context, actorID, action string, before, after map[string]any) error {
-	details := processDetails(before, after)
-	return s.Log(ctx, actorID, action, details)
-}
-
-func (s *slogAuditLogger) Log(ctx context.Context, actorID, action string, details map[string]any) error {
-	evt := event{
-		ActorID:   actorID,
-		Action:    action,
-		Details:   details,
-		Timestamp: time.Now(),
-	}
-
-	if err := s.v.Struct(evt); err != nil {
-		return validationErr(err)
-	}
-
-	s.logger.LogAttrs(ctx, slog.LevelInfo, "audit_log",
-		slog.String("actor_id", evt.ActorID),
-		slog.String("action", evt.Action),
-		slog.Any("details", evt.Details),
-		slog.Time("timestamp", evt.Timestamp),
-	)
 
 	return nil
 }
