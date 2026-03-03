@@ -28,6 +28,17 @@ type options struct {
 	output     io.Writer
 	now        func() time.Time
 	httpClient *http.Client
+	publisher  Publisher
+}
+
+// WithPublisher sets the publisher for the audit logger.
+func WithPublisher(publisher Publisher) Option {
+	return func(options *options) {
+		if options == nil {
+			return
+		}
+		options.publisher = publisher
+	}
 }
 
 // WithOutput sets the destination writer for logger output.

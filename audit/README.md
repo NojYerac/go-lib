@@ -1,63 +1,81 @@
 # Audit Package
 
-The `audit` package now exposes a minimal API:
+`audit` is a resilient, asynchronous audit logging library for Go. It provides a clean interface for capturing system events and state changes, with support for worker pooling, batching, and configurable retry logic.
 
-```go
-logger, err := audit.NewAuditLogger(audit.NewConfiguration())
-if err != nil {
-    return err
-}
+## Overview
 
-err = logger.Log(ctx, user.UUID, action, details)
+The package is built around four core primitives:
+1. **AuditLogger**: The primary entry point for recording events.
+2. **Publisher**: An interface for receiving and buffering events from the logger.
+3. **Dispatcher**: A background orchestrator that manages event delivery.
+4. **Sink**: The final destination for audit events (e.g., a database, API, or message queue).
+
+## Installation
+
+```bash
+go get github.com/NojYerac/go-lib/audit
 ```
 
-## API
+## Quick Start
 
 ```go
-type AuditLogger interface {
-    Log(ctx context.Context, actorID, action string, details map[string]any) error
-    LogChange(ctx context.Context, actorID, action string, before, after map[string]any) error
+// 1. Initialize the Publisher (buffers events)
+pub := audit.NewMemoryPublisher(1000)
+
+// 2. Configure Sinks (where events go)
+sinks := []audit.Sink{
+    &MyCustomSink{},
 }
 
-func NewAuditLogger(cfg *Configuration, options ...Option) (AuditLogger, error)
+// 3. Setup the Dispatcher (delivers events from Publisher to Sinks)
+dispatcher := audit.NewDefaultDispatcher(pub, sinks)
+go dispatcher.Start(ctx)
 
-func WithOutput(output io.Writer) Option
-func WithTimeNow(timeNowFunc func() time.Time) Option
-func WithHTTPBaseURL(baseURL string) Option
-func WithHTTPClient(client *http.Client) Option
+// 4. Create the Logger
+logger, _ := audit.NewAuditLogger(
+    audit.NewConfiguration(audit.WithLoggerType("stdout")),
+    audit.WithPublisher(pub),
+)
+
+// 5. Log an event
+logger.Log(ctx, "user-123", "document.deleted", map[string]any{
+    "doc_id": "999",
+})
 ```
+
+## Core Primitives
+
+### 1. AuditLogger
+The `AuditLogger` interface provides two methods for capturing events:
+- `Log(ctx, actorID, action, details)`: Logs a generic event with a key-value payload.
+- `LogChange(ctx, actorID, action, before, after)`: Automatically computes the diff between two maps and logs the resulting change set.
+
+### 2. Publisher
+The `Publisher` acts as a buffer between the synchronous logging call and the asynchronous delivery.
+- **MemoryPublisher**: The default implementation. It uses a bounded channel to prevent memory exhaustion and supports a circular buffer to manage overflow gracefully.
+
+### 3. Dispatcher
+The `Dispatcher` is responsible for reliable delivery. The `DefaultDispatcher` includes:
+- **Worker Pool**: Parallelizes delivery across multiple goroutines.
+- **Batching**: Aggregates events before sending to Sinks to improve throughput.
+- **Retry Logic**: Implements exponential backoff for transient errors.
+- **Graceful Shutdown**: Ensures in-flight batches are flushed before the service stops.
+
+### 4. Sink
+A `Sink` is an interface for external destinations.
+- **Sink**: Basic interface with a `Send` method.
+- **BatchingSink**: An optional interface. If a Sink implements `SendBatch`, the Dispatcher will use it to deliver multiple events in a single call.
+
+## Configuration
 
 `Configuration` fields:
+- `AuditLoggerType`: `noop`, `stdout`, or `http`.
+- `MaxPayloadBytes`: Maximum size for the audit event payload (default `4096`).
+- `AuditLoggerURL`: Target URL for the `http` logger.
 
-- `AuditLoggerType`: `noop`, `stdout`, or `http`
-- `AuditLoggerURL`: required for `http` logger
-- `MaxPayloadBytes`: max JSON byte size for `details` payload (default `4096`)
+## Resilience & Performance
 
-## Current implementation
-
-Supported logger types (`Configuration.AuditLoggerType`):
-
-- `noop`
-- `stdout`
-- `http`
-
-`stdout` pretty-prints each audit event as indented JSON to stdout by default.
-Use `WithOutput(...)` to redirect output to a custom `io.Writer`.
-Use `WithTimeNow(...)` to control generated timestamps, mostly for testing.
-`Log(...)` enforces validation and payload size limits before writing.
-
-`http` sends each audit event as JSON with `POST` to:
-
-- `<AuditLoggerURL>/api/auditlog`
-
-Use `WithHTTPBaseURL(...)` to override `AuditLoggerURL`, and
-`WithHTTPClient(...)` to provide a custom client.
-`Log(...)` enforces validation and payload size limits before posting.
-
-No-op behavior:
-
-- `NewAuditLogger(...)` returns a logger that accepts all calls.
-- `Log(...)` always returns `nil`.
-
-This keeps integration friction low while allowing future implementations to be
-added behind the same constructor and interface.
+- **Bounded Buffers**: Prevents out-of-memory issues if Sinks are slow or down.
+- **Asynchronous**: `Log` calls return immediately after handoff to the Publisher.
+- **Retries**: Distinguishes between transient and permanent errors to avoid unnecessary retries.
+- **Worker Management**: Configurable worker counts and batch sizes allow tuning for different workloads.

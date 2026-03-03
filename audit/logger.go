@@ -59,6 +59,7 @@ func NewAuditLogger(cfg *Configuration, opts ...Option) (AuditLogger, error) {
 			output:          o.output,
 			now:             o.now,
 			maxPayloadBytes: cfg.MaxPayloadBytes,
+			publisher:       o.publisher,
 		}, nil
 	case "http":
 		baseURL := strings.TrimSpace(cfg.AuditLoggerURL)
@@ -72,6 +73,7 @@ func NewAuditLogger(cfg *Configuration, opts ...Option) (AuditLogger, error) {
 			endpoint:        strings.TrimRight(baseURL, "/") + "/api/auditlog",
 			now:             o.now,
 			maxPayloadBytes: cfg.MaxPayloadBytes,
+			publisher:       o.publisher,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported audit logger type: %s", cfg.AuditLoggerType)
@@ -94,6 +96,7 @@ type stdoutAuditLogger struct {
 	output          io.Writer
 	now             func() time.Time
 	maxPayloadBytes int
+	publisher       Publisher
 }
 
 func (s *stdoutAuditLogger) LogChange(ctx context.Context, actorID, action string, before, after map[string]any) error {
@@ -102,7 +105,7 @@ func (s *stdoutAuditLogger) LogChange(ctx context.Context, actorID, action strin
 	return s.Log(ctx, actorID, action, details)
 }
 
-func (s *stdoutAuditLogger) Log(_ context.Context, actorID, action string, details map[string]any) error {
+func (s *stdoutAuditLogger) Log(ctx context.Context, actorID, action string, details map[string]any) error {
 	evt := event{
 		ActorID:   actorID,
 		Action:    action,
@@ -120,6 +123,14 @@ func (s *stdoutAuditLogger) Log(_ context.Context, actorID, action string, detai
 	}
 	if s.maxPayloadBytes > 0 && len(detailsPayload) > s.maxPayloadBytes {
 		return fmt.Errorf("%w: got=%d max=%d", ErrPayloadTooLarge, len(detailsPayload), s.maxPayloadBytes)
+	}
+
+	if s.publisher != nil {
+		if err := s.publisher.Publish(ctx, evt); err != nil {
+			// In a real system we might decide whether to fail the whole operation
+			// if audit publishing fails. For now, we'll return the error.
+			return fmt.Errorf("failed to publish audit event: %w", err)
+		}
 	}
 
 	payload, err := json.MarshalIndent(evt, "", "  ")
@@ -146,6 +157,7 @@ type httpAuditLogger struct {
 	endpoint        string
 	now             func() time.Time
 	maxPayloadBytes int
+	publisher       Publisher
 }
 
 func (h *httpAuditLogger) LogChange(ctx context.Context, actorID, action string, before, after map[string]any) error {
@@ -171,6 +183,12 @@ func (h *httpAuditLogger) Log(ctx context.Context, actorID, action string, detai
 	}
 	if h.maxPayloadBytes > 0 && len(payload) > h.maxPayloadBytes {
 		return fmt.Errorf("%w: got=%d max=%d", ErrPayloadTooLarge, len(payload), h.maxPayloadBytes)
+	}
+
+	if h.publisher != nil {
+		if err := h.publisher.Publish(ctx, evt); err != nil {
+			return fmt.Errorf("failed to publish audit event: %w", err)
+		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.endpoint, bytes.NewReader(payload))
