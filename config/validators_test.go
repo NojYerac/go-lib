@@ -6,10 +6,12 @@ import (
 )
 
 type TestConfiguration struct {
+	//nolint:gosec // G117: test fixture field
 	PrivateKey string `validate:"priv_ec_key"`
 	PublicKey  string `validate:"pub_key"`
 }
 
+//nolint:gosec // G101: test fixture with hardcoded EC private key
 var testConfig = &TestConfiguration{
 	PrivateKey: `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIA4WF79lBYQCjjIOunx5N75WdqstUwI4XYIqLZSxyJtqoAoGCCqGSM49

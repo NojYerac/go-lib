@@ -179,6 +179,7 @@ func (h *httpAuditLogger) Log(ctx context.Context, actorID, action string, detai
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	//nolint:gosec // G704: client is injected via WithHTTPClient option
 	resp, err := h.client.Do(req)
 	if err != nil {
 		return err
