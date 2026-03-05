@@ -12,6 +12,7 @@
 This is a **personal library** built to capture patterns I've used across multiple Go microservices. Instead of copying boilerplate between projects, I've extracted common components into a shared toolkit.
 
 **What it provides:**
+
 - Configuration loading with validation (env vars, files, defaults)
 - Structured logging (logrus-based with context support)
 - Health checks and liveness probes
@@ -39,6 +40,7 @@ make run   # no TLS, port 8080, stdout tracing
 ```
 
 The generated service ships with:
+
 - Signal-aware entry-point with clean shutdown
 - Config loading from env vars (prefixed `ORDERS_`)
 - Structured JSON logging, Prometheus metrics, and OpenTelemetry tracing
@@ -53,6 +55,7 @@ generated layout, and how to add routes or gRPC services.
 Each package is documented in its own README with usage examples.
 
 ### Scaffold
+
 **[scaffold](./scaffold/README.md)** - One-command generator that creates a production-ready service skeleton wired to go-lib.
 
 ```bash
@@ -60,6 +63,7 @@ go run github.com/nojyerac/go-lib/scaffold --name orders --module github.com/acm
 ```
 
 ### Configuration
+
 **[config](./config/README.md)** - Load and validate configuration from environment variables, files, and defaults.
 
 ```go
@@ -72,6 +76,7 @@ loader.InitAndValidate()
 ```
 
 ### Logging
+
 **[log](./log/README.md)** - Structured logging with context support (logrus-based).
 
 ```go
@@ -85,6 +90,7 @@ log.FromContext(ctx).Info("user action")
 ```
 
 ### Health Checks
+
 **[health](./health/README.md)** - Readiness and liveness probes for Kubernetes deployments.
 
 ```go
@@ -98,6 +104,7 @@ go checker.Start(context.Background())
 ```
 
 ### Metrics
+
 **[metrics](./metrics/README.md)** - Prometheus-compatible metrics collection.
 
 ```go
@@ -113,6 +120,7 @@ counter.Inc()
 ```
 
 ### Tracing
+
 **[tracing](./tracing/README.md)** - Distributed tracing with OpenTelemetry (OTLP exporter).
 
 ```go
@@ -127,6 +135,7 @@ tracing.SetGlobal(provider)
 ```
 
 ### HTTP Transport
+
 **[transport/http](./transport/http/README.md)** - HTTP server with middleware, auth, and observability built-in.
 
 ```go
@@ -141,6 +150,7 @@ server.HandleFunc("GET /api/users", handleUsers)
 ```
 
 ### gRPC Transport
+
 **[transport/grpc](./transport/grpc/README.md)** - gRPC server with interceptors for auth, logging, and metrics.
 
 ```go
@@ -154,6 +164,7 @@ server := transportgrpc.NewServer(
 ```
 
 ### Authentication
+
 **[auth](./auth/README.md)** - JWT validation with HMAC and RSA support.
 
 ```go
@@ -169,6 +180,7 @@ claims, err := validator.ValidateToken(tokenString)
 ```
 
 ### Authorization
+
 **[authz](./authz/README.md)** - Role-based access control with policy enforcement.
 
 ```go
@@ -183,6 +195,7 @@ allowed := enforcer.Enforce("/api/admin", userRoles)
 ```
 
 ### Database
+
 **[db](./db/README.md)** - PostgreSQL connection management with health checks.
 
 ```go
@@ -197,6 +210,7 @@ conn, _ := dbConn.Connect(context.Background())
 ```
 
 ### Audit Logging
+
 **[audit](./audit/README.md)** - Transaction-safe audit trail for mutations.
 
 ```go
@@ -207,6 +221,7 @@ logger.Log(ctx, tx, "UPDATE", userID, oldValue, newValue)
 ```
 
 ### Versioning
+
 **[version](./version/README.md)** - Build metadata injection for version tracking.
 
 ```go

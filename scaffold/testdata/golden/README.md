@@ -36,7 +36,7 @@ The table below lists the most important knobs; refer to the go-lib sub-package
 READMEs for full documentation.
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `EXAMPLE_PORT` | `80` | Listening port |
 | `EXAMPLE_NO_TLS` | `false` | Disable TLS (useful for local dev) |
 | `EXAMPLE_LOG_LEVEL` | `info` | Log level (`trace`…`panic`) |
@@ -53,7 +53,7 @@ docker run --rm -p 8080:8080 example:dev
 
 ## Project layout
 
-```
+```text
 cmd/example/     — main package / entry-point
 config/            — root Config struct + defaults
 internal/app/      — subsystem wiring (Run)

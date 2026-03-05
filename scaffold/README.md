@@ -12,7 +12,7 @@ go run github.com/nojyerac/go-lib/scaffold \
 ```
 
 | Flag | Required | Default | Description |
-|------|----------|---------|-------------|
+| ---- | -------- | ------- | ----------- |
 | `--name` | yes | — | Short service name used as the directory name, binary name, and env-var prefix |
 | `--module` | yes | — | Fully-qualified Go module path written into `go.mod` |
 | `--out` | no | `.` | Parent directory to write the generated service into |
@@ -63,7 +63,7 @@ correct order:
 Utility endpoints wired by go-lib's HTTP server out of the box:
 
 | Path | Description |
-|------|-------------|
+| ---- | ----------- |
 | `/livez` | Liveness probe |
 | `/healthz` | Readiness probe (aggregated health checks) |
 | `/metrics` | Prometheus metrics |
@@ -112,7 +112,7 @@ All env vars are prefixed with the uppercased service name (e.g. `ORDERS_`).
 The most common knobs:
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `ORDERS_PORT` | `80` | Listening port |
 | `ORDERS_NO_TLS` | `false` | Disable TLS |
 | `ORDERS_LOG_LEVEL` | `info` | `trace` / `debug` / `info` / `warn` / `error` |
@@ -151,7 +151,7 @@ go test ./scaffold/... -v
 Test descriptions:
 
 | Test | What it covers |
-|------|----------------|
+| ---- | -------------- |
 | `TestGenerate_Golden` | Output matches checked-in snapshots under `testdata/golden/` |
 | `TestGenerate_AllFilesPresent` | Every expected file is produced |
 | `TestGenerate_NameIsSubstituted` | Name and module are injected correctly |
