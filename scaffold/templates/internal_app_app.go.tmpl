@@ -1,0 +1,75 @@
+// Package app wires all go-lib subsystems and starts the {{.Name}} server.
+package app
+
+import (
+	"context"
+	"fmt"
+
+	libconfig "{{.GoLibModule}}/config"
+	"{{.GoLibModule}}/health"
+	"{{.GoLibModule}}/log"
+	"{{.GoLibModule}}/metrics"
+	"{{.GoLibModule}}/tracing"
+	"{{.GoLibModule}}/transport"
+	libhttp "{{.GoLibModule}}/transport/http"
+	"{{.GoLibModule}}/version"
+
+	svcconfig "{{.Module}}/config"
+	svctransport "{{.Module}}/transport"
+)
+
+// Run initialises all subsystems and blocks until ctx is cancelled
+// (SIGINT / SIGTERM).  It returns any non-context-cancellation error.
+func Run(ctx context.Context) error {
+	// ── config ────────────────────────────────────────────────────────────────
+	cfg := svcconfig.NewConfig()
+	loader := libconfig.NewConfigLoader("{{.NameUpper}}")
+	if err := loader.RegisterConfig(cfg); err != nil {
+		return fmt.Errorf("register config: %w", err)
+	}
+	if err := loader.InitAndValidate(); err != nil {
+		return fmt.Errorf("init config: %w", err)
+	}
+
+	// ── logger ────────────────────────────────────────────────────────────────
+	logger := log.NewLogger(&cfg.Log)
+	log.SetDefaultCtxLogger(logger)
+	ctx = log.WithLogger(ctx, logger)
+	l := log.FromContext(ctx)
+
+	// ── version ───────────────────────────────────────────────────────────────
+	version.SetServiceName("{{.Name}}")
+
+	// ── tracing ───────────────────────────────────────────────────────────────
+	tp := tracing.NewTracerProvider(&cfg.Tracing)
+	tracing.SetGlobal(tp)
+
+	// ── metrics ───────────────────────────────────────────────────────────────
+	mp, metricsHandler, err := metrics.NewMetricProvider()
+	if err != nil {
+		return fmt.Errorf("init metrics: %w", err)
+	}
+	metrics.SetGlobal(mp)
+
+	// ── health ────────────────────────────────────────────────────────────────
+	checker := health.NewChecker(&cfg.Health)
+	go func() { _ = checker.Start(ctx) }()
+
+	// ── HTTP server ───────────────────────────────────────────────────────────
+	httpServer := libhttp.NewServer(&cfg.HTTP,
+		libhttp.WithHealthChecker(checker),
+		libhttp.WithMetricsHandler(metricsHandler),
+	)
+	svctransport.RegisterRoutes(httpServer)
+
+	// ── transport (combined HTTP + gRPC) ──────────────────────────────────────
+	srv, err := transport.NewServer(&cfg.Transport,
+		transport.WithHTTP(httpServer),
+	)
+	if err != nil {
+		return fmt.Errorf("create transport: %w", err)
+	}
+
+	l.WithField("module", "{{.Module}}").Info("{{.Name}} starting")
+	return srv.Start(ctx)
+}
