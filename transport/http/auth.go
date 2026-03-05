@@ -46,5 +46,6 @@ func authMiddleware(validator auth.Validator, policies authz.PolicyMap) func(htt
 func writeAuthError(w http.ResponseWriter, err error) {
 	status := auth.HTTPStatus(err)
 	w.WriteHeader(status)
+	//nolint:gosec // G705: writing standard HTTP status text, not user input
 	_, _ = w.Write([]byte(http.StatusText(status)))
 }
