@@ -12,6 +12,7 @@
 This is a **personal library** built to capture patterns I've used across multiple Go microservices. Instead of copying boilerplate between projects, I've extracted common components into a shared toolkit.
 
 **What it provides:**
+
 - Configuration loading with validation (env vars, files, defaults)
 - Structured logging (logrus-based with context support)
 - Health checks and liveness probes
@@ -25,90 +26,44 @@ This is a **personal library** built to capture patterns I've used across multip
 
 ## Quick Start
 
-```go
-package main
+The fastest way to start a new service is with the **scaffold** generator.
+It creates a fully wired, compilable skeleton in one command:
 
-import (
-  "context"
-  "net/http"
+```bash
+go run github.com/nojyerac/go-lib/scaffold \
+  --name orders \
+  --module github.com/acme/orders
 
-  "github.com/nojyerac/go-lib/config"
-  "github.com/nojyerac/go-lib/health"
-  "github.com/nojyerac/go-lib/log"
-  "github.com/nojyerac/go-lib/metrics"
-  "github.com/nojyerac/go-lib/tracing"
-  "github.com/nojyerac/go-lib/transport"
-  transporthttp "github.com/nojyerac/go-lib/transport/http"
-  "github.com/nojyerac/go-lib/version"
-)
-
-type AppConfig struct {
-  Base      *config.Configuration
-  Log       *log.Configuration
-  Health    *health.Configuration
-  Transport *transport.Configuration
-  Trace     *tracing.Configuration
-}
-
-func main() {
-  version.SetServiceName("example-service")
-
-  cfg := &AppConfig{
-    Base:      &config.Configuration{},
-    Log:       log.NewConfiguration(),
-    Health:    health.NewConfiguration(),
-    Transport: transport.NewConfiguration(),
-    Trace:     &tracing.Configuration{ExporterType: "noop"},
-  }
-
-  loader := config.NewConfigLoader("example")
-  _ = loader.RegisterConfig(cfg.Base)
-  _ = loader.RegisterConfig(cfg.Log)
-  _ = loader.RegisterConfig(cfg.Health)
-  _ = loader.RegisterConfig(cfg.Transport)
-  _ = loader.RegisterConfig(cfg.Trace)
-  if err := loader.InitAndValidate(); err != nil {
-    panic(err)
-  }
-
-  l := log.NewLogger(cfg.Log)
-  log.SetDefaultCtxLogger(l)
-
-  h := health.NewChecker(cfg.Health)
-  go h.Start(context.Background())
-
-  mp, metricsHandler, _ := metrics.NewMetricProvider()
-  metrics.SetGlobal(mp)
-
-  tp := tracing.NewTracerProvider(cfg.Trace)
-  tracing.SetGlobal(tp)
-
-  httpSrv := transporthttp.NewServer(
-    transporthttp.NewConfiguration(),
-    transporthttp.WithLogger(l),
-    transporthttp.WithHealthChecker(h),
-    transporthttp.WithMetricsHandler(metricsHandler),
-  )
-  httpSrv.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusOK)
-    _, _ = w.Write([]byte("hello"))
-  })
-
-  s, err := transport.NewServer(cfg.Transport, transport.WithHTTP(httpSrv))
-  if err != nil {
-    panic(err)
-  }
-  if err := s.Start(context.Background()); err != nil {
-    panic(err)
-  }
-}
+cd orders
+go mod tidy
+make run   # no TLS, port 8080, stdout tracing
 ```
+
+The generated service ships with:
+
+- Signal-aware entry-point with clean shutdown
+- Config loading from env vars (prefixed `ORDERS_`)
+- Structured JSON logging, Prometheus metrics, and OpenTelemetry tracing
+- `/livez`, `/healthz`, `/metrics`, and `/version` endpoints
+- Multi-stage Dockerfile, Makefile, and a GitHub Actions CI workflow
+
+See the **[scaffold README](./scaffold/README.md)** for the full flag reference,
+generated layout, and how to add routes or gRPC services.
 
 ## Available Packages
 
 Each package is documented in its own README with usage examples.
 
+### Scaffold
+
+**[scaffold](./scaffold/README.md)** - One-command generator that creates a production-ready service skeleton wired to go-lib.
+
+```bash
+go run github.com/nojyerac/go-lib/scaffold --name orders --module github.com/acme/orders
+```
+
 ### Configuration
+
 **[config](./config/README.md)** - Load and validate configuration from environment variables, files, and defaults.
 
 ```go
@@ -121,6 +76,7 @@ loader.InitAndValidate()
 ```
 
 ### Logging
+
 **[log](./log/README.md)** - Structured logging with context support (logrus-based).
 
 ```go
@@ -134,6 +90,7 @@ log.FromContext(ctx).Info("user action")
 ```
 
 ### Health Checks
+
 **[health](./health/README.md)** - Readiness and liveness probes for Kubernetes deployments.
 
 ```go
@@ -147,6 +104,7 @@ go checker.Start(context.Background())
 ```
 
 ### Metrics
+
 **[metrics](./metrics/README.md)** - Prometheus-compatible metrics collection.
 
 ```go
@@ -162,6 +120,7 @@ counter.Inc()
 ```
 
 ### Tracing
+
 **[tracing](./tracing/README.md)** - Distributed tracing with OpenTelemetry (OTLP exporter).
 
 ```go
@@ -176,6 +135,7 @@ tracing.SetGlobal(provider)
 ```
 
 ### HTTP Transport
+
 **[transport/http](./transport/http/README.md)** - HTTP server with middleware, auth, and observability built-in.
 
 ```go
@@ -190,6 +150,7 @@ server.HandleFunc("GET /api/users", handleUsers)
 ```
 
 ### gRPC Transport
+
 **[transport/grpc](./transport/grpc/README.md)** - gRPC server with interceptors for auth, logging, and metrics.
 
 ```go
@@ -203,6 +164,7 @@ server := transportgrpc.NewServer(
 ```
 
 ### Authentication
+
 **[auth](./auth/README.md)** - JWT validation with HMAC and RSA support.
 
 ```go
@@ -218,6 +180,7 @@ claims, err := validator.ValidateToken(tokenString)
 ```
 
 ### Authorization
+
 **[authz](./authz/README.md)** - Role-based access control with policy enforcement.
 
 ```go
@@ -232,6 +195,7 @@ allowed := enforcer.Enforce("/api/admin", userRoles)
 ```
 
 ### Database
+
 **[db](./db/README.md)** - PostgreSQL connection management with health checks.
 
 ```go
@@ -246,6 +210,7 @@ conn, _ := dbConn.Connect(context.Background())
 ```
 
 ### Audit Logging
+
 **[audit](./audit/README.md)** - Transaction-safe audit trail for mutations.
 
 ```go
@@ -256,6 +221,7 @@ logger.Log(ctx, tx, "UPDATE", userID, oldValue, newValue)
 ```
 
 ### Versioning
+
 **[version](./version/README.md)** - Build metadata injection for version tracking.
 
 ```go
