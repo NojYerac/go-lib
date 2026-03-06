@@ -26,41 +26,37 @@ Running the command above produces an `orders/` directory:
 
 ```tree
 orders/
-├── cmd/orders/
-│   └── main.go                  # signal-aware entry-point
+├── api/
+│   ├── example.proto
+│   └── openapi.yml
+├── cmd/orders
+│   └── main.go
 ├── config/
-│   └── config.go                # root Config struct + defaults
-├── internal/app/
-│   ├── app.go                   # subsystem wiring (Run)
-│   └── app_test.go              # smoke test with env overrides
-├── transport/
-│   └── server.go                # HTTP route registration
-├── .github/workflows/
-│   └── ci.yml                   # test → lint → docker build pipeline
+│   └── config.go
+├── data/
+│   ├── data_suite_test.go
+│   ├── data.go
+│   └── db/
+│       ├── db_suite_test.go
+│       └── db.go
+├── Dockerfile
+├── go.mod
+├── Makefile
+├── README.md
 ├── scripts/
+│   ├── generate.sh
 │   ├── lint.sh
 │   └── test.sh
-├── Dockerfile                   # multi-stage, scratch runtime image
-├── Makefile                     # run / test / lint / build / docker targets
-├── go.mod
-└── README.md
+└── transport/
+    ├── http/
+    │   ├── http_suite_test.go
+    │   └── http.go
+    └── rpc/
+        ├── rpc_suite_test.go
+        └── rpc.go
 ```
 
-### What is wired automatically
-
-The generated `internal/app/app.go` initialises all go-lib subsystems in the
-correct order:
-
-1. **Config** — `config.NewConfigLoader` with your service's env-var prefix
-2. **Logger** — `log.NewLogger`, set as the global context logger
-3. **Version** — `version.SetServiceName`
-4. **Tracing** — `tracing.NewTracerProvider` + `tracing.SetGlobal`
-5. **Metrics** — `metrics.NewMetricProvider` + `metrics.SetGlobal`
-6. **Health** — `health.NewChecker` started in a goroutine
-7. **HTTP server** — `transport/http.NewServer` with health + metrics wired
-8. **Transport** — `transport.NewServer` (cmux; HTTP and optionally gRPC)
-
-Utility endpoints wired by go-lib's HTTP server out of the box:
+### Telemetry endpoints
 
 | Path | Description |
 | ---- | ----------- |
@@ -71,7 +67,7 @@ Utility endpoints wired by go-lib's HTTP server out of the box:
 
 ### Adding routes
 
-Edit `transport/server.go`:
+Edit `transport/http/server.go`:
 
 ```go
 func RegisterRoutes(s libhttp.Server) {

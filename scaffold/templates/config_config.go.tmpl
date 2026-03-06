@@ -1,36 +1,55 @@
-// Package config holds the service-wide configuration structs and their
-// defaults.  Each embedded struct maps to a distinct go-lib subsystem.
 package config
 
 import (
+	"{{.GoLibModule}}/config"
+	"{{.GoLibModule}}/db"
 	"{{.GoLibModule}}/health"
 	"{{.GoLibModule}}/log"
 	"{{.GoLibModule}}/tracing"
-	libhttp "{{.GoLibModule}}/transport/http"
 	"{{.GoLibModule}}/transport"
+	"{{.GoLibModule}}/transport/http"
+	"{{.GoLibModule}}/version"
 )
 
-// Config is the root configuration for {{.Name}}.
-// Fields are loaded by go-lib's config.Loader using the {{.NameUpper}}_ env-var
-// prefix and optional config files in ./config/.
-type Config struct {
-	Log       log.Configuration       `mapstructure:",squash"`
-	Health    health.Configuration    `mapstructure:",squash"`
-	Transport transport.Configuration `mapstructure:",squash"`
-	HTTP      libhttp.Configuration   `mapstructure:",squash"`
-	Tracing   tracing.Configuration   `mapstructure:",squash"`
-}
+var (
+	DBConfig     *db.Configuration
+	HealthConfig *health.Configuration
+	HTTPConfig   *http.Configuration
+	LogConfig    *log.Configuration
+	TraceConfig  *tracing.Configuration
+	TransConfig  *transport.Configuration
+)
 
-// NewConfig returns a Config initialised with safe, local-development defaults.
-func NewConfig() *Config {
-	return &Config{
-		Log:       *log.NewConfiguration(),
-		Health:    *health.NewConfiguration(),
-		Transport: *transport.NewConfiguration(),
-		HTTP:      *libhttp.NewConfiguration(),
-		Tracing: tracing.Configuration{
-			ExporterType: "noop",
-			SampleRatio:  1.0,
-		},
+// InitAndValidate initializes the config from environment variables and validates it.
+func InitAndValidate() error {
+	loader := config.NewConfigLoader(version.GetVersion().Name)
+	DBConfig = db.NewConfiguration()
+	if err := loader.RegisterConfig(DBConfig); err != nil {
+		return err
 	}
+	LogConfig = log.NewConfiguration()
+	if err := loader.RegisterConfig(LogConfig); err != nil {
+		return err
+	}
+	HealthConfig = health.NewConfiguration()
+	if err := loader.RegisterConfig(HealthConfig); err != nil {
+		return err
+	}
+	HTTPConfig = http.NewConfiguration()
+	if err := loader.RegisterConfig(HTTPConfig); err != nil {
+		return err
+	}
+	TransConfig = transport.NewConfiguration()
+	if err := loader.RegisterConfig(TransConfig); err != nil {
+		return err
+	}
+	TraceConfig = &tracing.Configuration{}
+	if err := loader.RegisterConfig(TraceConfig); err != nil {
+		return err
+	}
+
+	if err := loader.InitAndValidate(); err != nil {
+		return err
+	}
+	return nil
 }

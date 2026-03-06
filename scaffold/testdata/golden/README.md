@@ -36,7 +36,7 @@ The table below lists the most important knobs; refer to the go-lib sub-package
 READMEs for full documentation.
 
 | Variable | Default | Description |
-| -------- | ------- | ----------- |
+|----------|---------|-------------|
 | `EXAMPLE_PORT` | `80` | Listening port |
 | `EXAMPLE_NO_TLS` | `false` | Disable TLS (useful for local dev) |
 | `EXAMPLE_LOG_LEVEL` | `info` | Log level (`trace`…`panic`) |
@@ -54,12 +54,16 @@ docker run --rm -p 8080:8080 example:dev
 ## Project layout
 
 ```text
+.github/workflows/ — CI pipeline
+api/               — protobuf & OpenAPI definitions
 cmd/example/     — main package / entry-point
 config/            — root Config struct + defaults
-internal/app/      — subsystem wiring (Run)
-transport/         — HTTP route registration
+data/              — business logic + data access (repositories, etc.)
+mocks/             — generated test mocks (via mockery)
+pb/                — generated protobuf code (do not edit)
+transport/http     — HTTP route registration
+transport/rpc      — gRPC service definitions + registration
 scripts/           — lint + test helpers
-.github/workflows/ — CI pipeline
 Dockerfile
 Makefile
 ```
@@ -69,8 +73,7 @@ Makefile
 Edit `transport/server.go` and call `s.HandleFunc` or `s.Handle` with your
 handler.  The API prefix `/api` is applied automatically by go-lib.
 
-## gRPC
-
-Instantiate a `*grpc.Server`, register your service implementations, then pass
-it to `transport.NewServer` via `transport.WithGRPC(grpcServer)` in
-`internal/app/app.go`.
+## Adding gRPC services
+Add your protobuf definitions to the `api/` directory and generate code with `protoc`.
+Then, edit `transport/rpc/server.go` and call `s.RegisterService` with your service
+implementation.

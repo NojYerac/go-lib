@@ -36,7 +36,7 @@ func main() {
 
 	gen, err := NewGenerator()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error initialising generator: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error initializing generator: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -74,12 +74,17 @@ func main() {
 			fmt.Fprintf(os.Stderr, "mkdir %s: %v\n", filepath.Dir(dest), err)
 			os.Exit(1)
 		}
-		if err := os.WriteFile(dest, []byte(files[p]), 0o644); err != nil {
+		var flags os.FileMode = 0o644
+		if strings.HasSuffix(dest, ".sh") {
+			flags = 0o755
+		}
+		if err := os.WriteFile(dest, []byte(files[p]), flags); err != nil { // nolint:gosec // file permissions are not sensitive
 			fmt.Fprintf(os.Stderr, "write %s: %v\n", dest, err)
 			os.Exit(1)
 		}
 		fmt.Printf("  created  %s\n", dest)
 	}
-	fmt.Printf("\nService %q scaffolded into %s\n", *name, root)
-	fmt.Printf("Next steps:\n  cd %s && go mod tidy && make test\n", root)
+	fmt.Printf("\nService %q scaffolded into %s\nNext steps:\n", *name, root)
+	fmt.Printf("cd %s && make generate &&"+
+		" go mod tidy && make lint && make test\n", root)
 }

@@ -1,10 +1,11 @@
+package main
+
 // Package main implements the go-lib scaffold CLI.
 // It generates a production-ready service skeleton wired to go-lib conventions.
 //
 // Usage:
 //
 // go run ./scaffold --name orders --module github.com/acme/orders [--out .] [--dry-run]/
-package main
 
 import (
 	"bytes"
@@ -48,6 +49,11 @@ func (o Options) NameUpper() string {
 	return strings.ToUpper(o.Name)
 }
 
+// NameLower returns Name in lower_case (used for some file paths).
+func (o Options) NameLower() string {
+	return strings.ToLower(o.Name)
+}
+
 // fileEntries maps an output path template string to the name of the embedded
 // template that produces the file's content. The path strings are themselves
 // rendered as text/template so they can reference {{.Name}} etc.
@@ -55,18 +61,28 @@ var fileEntries = []struct {
 	pathTmpl string
 	tmplName string
 }{
+	{".github/workflows/ci.yml", "github_workflows_ci.yml.tmpl"},
+	{"api/openapi.yml", "api_openapi.yml.tmpl"},
+	{"api/example.proto", "api_example.proto.tmpl"},
 	{"cmd/{{.Name}}/main.go", "cmd_main.go.tmpl"},
-	{"internal/app/app.go", "internal_app_app.go.tmpl"},
-	{"internal/app/app_test.go", "internal_app_app_test.go.tmpl"},
 	{"config/config.go", "config_config.go.tmpl"},
-	{"transport/server.go", "transport_server.go.tmpl"},
+	{"data/data.go", "data_data.go.tmpl"},
+	{"data/data_suite_test.go", "data_data_suite_test.go.tmpl"},
+	{"data/db/db.go", "data_db_db.go.tmpl"},
+	{"data/db/db_suite_test.go", "data_db_db_suite_test.go.tmpl"},
+	{"scripts/generate.sh", "scripts_generate.sh.tmpl"},
+	{"scripts/lint.sh", "scripts_lint.sh.tmpl"},
+	{"scripts/test.sh", "scripts_test.sh.tmpl"},
+	{"transport/http/http.go", "transport_http_http.go.tmpl"},
+	{"transport/http/http_suite_test.go", "transport_http_http_suite_test.go.tmpl"},
+	{"transport/rpc/rpc.go", "transport_rpc_rpc.go.tmpl"},
+	{"transport/rpc/rpc_suite_test.go", "transport_rpc_rpc_suite_test.go.tmpl"},
+	{".golangci.yml", "golangci.yml.tmpl"},
+	{".mockery.yml", "mockery.yml.tmpl"},
 	{"go.mod", "go.mod.tmpl"},
 	{"Dockerfile", "Dockerfile.tmpl"},
 	{"Makefile", "Makefile.tmpl"},
 	{"README.md", "README.md.tmpl"},
-	{"scripts/lint.sh", "scripts_lint.sh.tmpl"},
-	{"scripts/test.sh", "scripts_test.sh.tmpl"},
-	{".github/workflows/ci.yml", "github_workflows_ci.yml.tmpl"},
 }
 
 // Generator renders service skeletons from the embedded template set.

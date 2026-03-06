@@ -31,6 +31,10 @@ test-cover: ## Run tests with HTML coverage report
 	@echo "Coverage report: coverage.html"
 
 # ── build ─────────────────────────────────────────────────────────────────────
+.PHONY: generate
+generate: ## Generate code (e.g. OpenAPI client)
+	@bash scripts/generate.sh
+
 .PHONY: build
 build: ## Compile binary
 	go build -o bin/$(SERVICE) ./cmd/$(SERVICE)
