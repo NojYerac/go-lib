@@ -4,6 +4,7 @@ go 1.25.1
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -35,7 +36,6 @@ require (
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
