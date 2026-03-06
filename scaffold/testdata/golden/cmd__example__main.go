@@ -39,7 +39,7 @@ func main() { //nolint:unused // main is the entry point for the service.
 	mp, metricHandler, err := metrics.NewMetricProvider()
 	if err != nil {
 		logger.WithError(err).Panic("failed to create metric provider")
-    }
+	}
 	metrics.SetGlobal(mp)
 	hc := health.NewChecker(config.HealthConfig)
 

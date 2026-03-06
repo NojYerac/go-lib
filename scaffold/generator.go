@@ -35,13 +35,17 @@ type Options struct {
 	GoVersion string
 }
 
+func stringsToTitle(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
 // NameTitle returns Name with a capitalised first letter (for use in generated
 // Go identifiers and display strings).
 func (o Options) NameTitle() string {
-	if len(o.Name) == 0 {
-		return ""
-	}
-	return strings.ToUpper(o.Name[:1]) + o.Name[1:]
+	return stringsToTitle(o.Name)
 }
 
 // NameUpper returns Name in UPPER_CASE (used as the env-var prefix for viper).
@@ -95,12 +99,7 @@ func NewGenerator() (*Generator, error) {
 	funcMap := template.FuncMap{
 		"ToUpper": strings.ToUpper,
 		"ToLower": strings.ToLower,
-		"Title": func(s string) string {
-			if len(s) == 0 {
-				return ""
-			}
-			return strings.ToUpper(s[:1]) + s[1:]
-		},
+		"Title":   stringsToTitle,
 	}
 	tmpl, err := template.New("root").
 		Funcs(funcMap).

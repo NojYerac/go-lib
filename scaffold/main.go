@@ -78,7 +78,8 @@ func main() {
 		if strings.HasSuffix(dest, ".sh") {
 			flags = 0o755
 		}
-		if err := os.WriteFile(dest, []byte(files[p]), flags); err != nil { // nolint:gosec // file permissions are not sensitive
+		// code/test files should be readable/executable by all, but not writable by group/others
+		if err := os.WriteFile(dest, []byte(files[p]), flags); err != nil { //nolint:gosec // see above
 			fmt.Fprintf(os.Stderr, "write %s: %v\n", dest, err)
 			os.Exit(1)
 		}

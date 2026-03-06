@@ -40,10 +40,10 @@ func generateToDir(t *testing.T, opts Options, outDir string) string {
 	root := filepath.Join(outDir, opts.Name)
 	for relPath, content := range files {
 		dest := filepath.Join(root, relPath)
-		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
 			t.Fatalf("mkdir %s: %v", filepath.Dir(dest), err)
 		}
-		if err := os.WriteFile(dest, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(dest, []byte(content), 0o600); err != nil {
 			t.Fatalf("write %s: %v", dest, err)
 		}
 	}
@@ -61,15 +61,23 @@ func TestE2E_WritesExpectedFileTree(t *testing.T) {
 	root := generateToDir(t, opts, dir)
 
 	wantPaths := []string{
+		"api/example.proto",
+		"api/openapi.yml",
 		"cmd/alpha/main.go",
-		"internal/app/app.go",
-		"internal/app/app_test.go",
 		"config/config.go",
-		"transport/server.go",
+		"data/data.go",
+		"data/data_suite_test.go",
+		"data/db/db.go",
+		"data/db/db_suite_test.go",
+		"transport/rpc/rpc.go",
+		"transport/rpc/rpc_suite_test.go",
+		"transport/http/http.go",
+		"transport/http/http_suite_test.go",
 		"go.mod",
 		"Dockerfile",
 		"Makefile",
 		"README.md",
+		"scripts/generate.sh",
 		"scripts/lint.sh",
 		"scripts/test.sh",
 		".github/workflows/ci.yml",
@@ -102,10 +110,8 @@ func TestE2E_FileContentsAreCoherent(t *testing.T) {
 		file    string
 		contain []string
 	}{
-		{"cmd/billing/main.go", []string{opts.Module + "/internal/app"}},
-		{"internal/app/app.go", []string{opts.Module, opts.Name, `"BILLING"`}},
 		{"config/config.go", []string{opts.GoLibModule}},
-		{"transport/server.go", []string{opts.Name, opts.GoLibModule}},
+		{"transport/http/http.go", []string{opts.Name, opts.GoLibModule}},
 		{"go.mod", []string{"module " + opts.Module, opts.GoLibModule}},
 		{"Dockerfile", []string{"billing", "BILLING_"}},
 		{"Makefile", []string{"billing", "BILLING_"}},
@@ -299,7 +305,8 @@ func TestE2E_Compiles(t *testing.T) {
 	libRoot := goLibRoot(t)
 
 	// Inject replace directive so the generated module resolves go-lib locally.
-	editCmd := exec.Command("go", "mod", "edit",
+	// this is a test-only replace directive, not a security-sensitive operation
+	editCmd := exec.Command("go", "mod", "edit", //nolint:gosec // see above
 		"-replace="+opts.GoLibModule+"="+libRoot,
 	)
 	editCmd.Dir = root
@@ -313,8 +320,14 @@ func TestE2E_Compiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read go-lib go.sum: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "go.sum"), libSum, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.sum"), libSum, 0o600); err != nil {
 		t.Fatalf("write go.sum: %v", err)
+	}
+
+	generateCmd := exec.Command("bash", "scripts/generate.sh")
+	generateCmd.Dir = root
+	if out, err := generateCmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate.sh: %v\n%s", err, out)
 	}
 
 	tidyCmd := exec.Command("go", "mod", "tidy")

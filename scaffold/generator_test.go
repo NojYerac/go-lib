@@ -42,10 +42,10 @@ func TestGenerate_Golden(t *testing.T) {
 		goldenPath := filepath.Join("testdata", "golden", goldenName)
 
 		if update {
-			if err := os.MkdirAll(filepath.Dir(goldenPath), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(goldenPath), 0o700); err != nil {
 				t.Fatalf("mkdir %s: %v", filepath.Dir(goldenPath), err)
 			}
-			if err := os.WriteFile(goldenPath, []byte(got), 0o644); err != nil {
+			if err := os.WriteFile(goldenPath, []byte(got), 0o600); err != nil {
 				t.Fatalf("write golden %s: %v", goldenPath, err)
 			}
 			t.Logf("updated golden: %s", goldenPath)
@@ -78,11 +78,8 @@ func TestGenerate_AllFilesPresent(t *testing.T) {
 	}
 
 	expected := []string{
-		"cmd/example/main.go",
-		"internal/app/app.go",
-		"internal/app/app_test.go",
 		"config/config.go",
-		"transport/server.go",
+		"transport/http/http.go",
 		"go.mod",
 		"Dockerfile",
 		"Makefile",
@@ -121,15 +118,6 @@ func TestGenerate_NameIsSubstituted(t *testing.T) {
 	files, err := gen.Generate(opts)
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
-	}
-
-	// The app entrypoint should reference the module path.
-	appGo := files["internal/app/app.go"]
-	if !strings.Contains(appGo, opts.Module) {
-		t.Errorf("app.go does not contain module %q", opts.Module)
-	}
-	if !strings.Contains(appGo, opts.Name) {
-		t.Errorf("app.go does not contain service name %q", opts.Name)
 	}
 
 	// The cmd entrypoint must be at cmd/myservice/main.go.
