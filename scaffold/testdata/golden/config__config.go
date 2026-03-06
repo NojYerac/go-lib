@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/nojyerac/go-lib/auth"
 	"github.com/nojyerac/go-lib/config"
 	"github.com/nojyerac/go-lib/db"
 	"github.com/nojyerac/go-lib/health"
@@ -12,6 +13,7 @@ import (
 )
 
 var (
+	AuthConfig   *auth.Configuration
 	DBConfig     *db.Configuration
 	HealthConfig *health.Configuration
 	HTTPConfig   *http.Configuration
@@ -23,6 +25,10 @@ var (
 // InitAndValidate initializes the config from environment variables and validates it.
 func InitAndValidate() error {
 	loader := config.NewConfigLoader(version.GetVersion().Name)
+	AuthConfig = auth.NewConfiguration()
+	if err := loader.RegisterConfig(AuthConfig); err != nil {
+		return err
+	}
 	DBConfig = db.NewConfiguration()
 	if err := loader.RegisterConfig(DBConfig); err != nil {
 		return err

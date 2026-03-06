@@ -7,13 +7,19 @@ IMAGE_TAG ?= $(SERVICE):dev
 # ── local development ─────────────────────────────────────────────────────────
 .PHONY: run
 run: ## Run the service locally (no TLS, port 8080)
+	{{.NameUpper}}_AUTH_ISSUER=issuer \
+	{{.NameUpper}}_AUTH_AUDIENCE={{.NameLower}}-api \
+	{{.NameUpper}}_AUTH_HMAC_SECRET=secret \
+	{{.NameUpper}}_DATABASE_CONNECTION_STRING=postgres://localhost:5432/postgres?sslmode=disable \
 	{{.NameUpper}}_NO_TLS=true \
 	{{.NameUpper}}_PORT=8080 \
 	{{.NameUpper}}_SERVICE_NAME=$(SERVICE) \
 	{{.NameUpper}}_LOG_LEVEL=debug \
 	{{.NameUpper}}_EXPORTER_TYPE=stdout \
 	{{.NameUpper}}_HEALTHCHECK_CHECK_INTERVAL=10s \
-	go run ./cmd/$(SERVICE)
+	{{.NameUpper}}_HUMAN_FRIENDLY=true \
+	{{.NameUpper}}_LOG_LEVEL=debug \
+	go run ./cmd/$(SERVICE) -c configs
 
 # ── code quality ──────────────────────────────────────────────────────────────
 .PHONY: lint
