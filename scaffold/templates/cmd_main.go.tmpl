@@ -1,4 +1,4 @@
-package {{.NameLower}}
+package main
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"sync"
 
+	"{{.GoLibModule}}/auth"
 	libdb "{{.GoLibModule}}/db"
 	"{{.GoLibModule}}/health"
 	"{{.GoLibModule}}/log"
@@ -18,11 +19,12 @@ import (
 	"{{.GoLibModule}}/version"
 	"{{.Module}}/config"
 	"{{.Module}}/data/db"
+	"{{.Module}}/security"
 	"{{.Module}}/transport/http"
 	"{{.Module}}/transport/rpc"
 )
 
-func main() { //nolint:unused // main is the entry point for the service.
+func main() {
 	// init & config
 	version.SetSemVer("0.0.0")
 	version.SetServiceName("{{.NameLower}}")
@@ -55,15 +57,20 @@ func main() { //nolint:unused // main is the entry point for the service.
 	)
 
 	// transports
+	av := auth.NewValidator(config.AuthConfig)
 	hSrv := libhttp.NewServer(
 		config.HTTPConfig,
 		libhttp.WithMetricsHandler(metricHandler),
 		libhttp.WithHealthChecker(hc),
+		libhttp.WithAuthMiddleware(av, security.HTTPPolicyMap()),
 	)
 	http.RegisterRoutes(dataSrc, hSrv)
 
-	reg := rpc.RegisterServices(dataSrc, rpc.WithLogger(logger))
-	gSrv := libgrpc.NewServer(reg)
+	libgrpc.SetLogger(logger)
+	gSrv := libgrpc.NewServer(
+		rpc.RegisterServices(dataSrc, rpc.WithLogger(logger)),
+		libgrpc.AuthServerOptions(av, security.GRPCPolicyMap())...,
+	)
 
 	srv, err := transport.NewServer(
 		config.TransConfig,
@@ -93,14 +100,14 @@ func main() { //nolint:unused // main is the entry point for the service.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := hc.Start(ctx); err != nil {
+		if err := hc.Start(ctx); err != nil && err != context.Canceled {
 			logger.WithError(err).Panic("health checker error")
 		}
 	}()
 
-	logger.Info("Service starting")
+	logger.Info("service starting")
 	<-ctx.Done()
-	logger.Info("Service stopping")
+	logger.Info("service stopping")
 	wg.Wait()
-	logger.Info("Service stopped")
+	logger.Info("service stopped")
 }

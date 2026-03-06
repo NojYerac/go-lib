@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	_ "github.com/lib/pq"
 	"github.com/nojyerac/go-lib/db"
 	"github.com/nojyerac/go-lib/log"
 	"github.com/nojyerac/go-lib/tracing"
