@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 
-	sq "github.com/Masterminds/squirrel"
 	"{{.GoLibModule}}/db"
 	"{{.GoLibModule}}/log"
 	"{{.GoLibModule}}/tracing"
@@ -59,17 +58,7 @@ type source struct {
 func (s *source) GetExample(ctx context.Context, id string) (*data.Example, error) {
 	ctx, span := s.t.Start(ctx, "source.GetExample")
 	defer span.End()
-	query := sq.
-		Select("id", "name", "description").
-		From("examples").
-		Where(sq.Eq{"id": id}).
-		PlaceholderFormat(sq.Dollar)
-	sql, args, err := query.ToSql()
-	if err != nil {
-		s.l.WithError(err).Error("failed to build SQL query")
-		return nil, err
-	}
 	ex := new(data.Example)
-	err = s.d.Get(ctx, ex, sql, args...)
+	err := s.d.Get(ctx, ex, "SELECT id, name, description FROM example WHERE id = $1", id)
 	return ex, err
 }

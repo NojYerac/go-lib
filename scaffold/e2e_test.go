@@ -8,11 +8,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/Masterminds/squirrel"
 )
-
-var _ squirrel.SelectBuilder = squirrel.Select() // silence unused import error since this is required for e2e test.
 
 // goLibRoot returns the absolute path of the go-lib module root so the
 // generated service can point its replace directive at it during compilation.
