@@ -30,9 +30,10 @@ var b = bytes.NewBuffer(make([]byte, 0, 1024))
 
 var _ = BeforeSuite(func() {
 	version.SetServiceName("test")
-	tracing.SetGlobal(tracing.NewTracerProvider(&tracing.Configuration{
+	tp, _ := tracing.NewTracerProvider(&tracing.Configuration{
 		ExporterType: "noop",
-	}))
+	})
+	tracing.SetGlobal(tp)
 	l := log.NewLogger(log.NewConfiguration(), log.WithOutput(b))
 	Expect(func() { SetLogger(l) }).NotTo(Panic())
 })

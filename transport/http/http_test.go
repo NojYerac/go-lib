@@ -22,9 +22,10 @@ var _ = BeforeSuite(func() {
 	var mp *metric.MeterProvider
 	mp, metricHandler, _ = metrics.NewMetricProvider()
 	metrics.SetGlobal(mp)
-	tracing.SetGlobal(tracing.NewTracerProvider(&tracing.Configuration{
+	tp, _ := tracing.NewTracerProvider(&tracing.Configuration{
 		ExporterType: "noop",
-	}))
+	})
+	tracing.SetGlobal(tp)
 })
 
 var _ = Describe("server", func() {
