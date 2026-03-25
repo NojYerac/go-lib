@@ -1,9 +1,16 @@
 packages:
-  github.com/nojyerac/go-lib:
+  github.com/nojyerac/go-lib/db:
     config:
-      recursive: True
-      keeptree: True
       with-expecter: True
       resolve-type-alias: False
       issue-845-fix: True
-      include-regex: "^(Server|Client|Database|Tx|Checker)$"
+      dir: "./mocks/db"
+      include-regex: "^(Database|Tx)$"
+  github.com/nojyerac/go-lib/health:
+    config:
+      with-expecter: True
+      resolve-type-alias: False
+      issue-845-fix: True
+      dir: "./mocks/health"
+      include-regex: "Checker"
+  github.com/nojyerac/go-lib/transport/http:

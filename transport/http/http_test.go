@@ -7,7 +7,7 @@ import (
 
 	"github.com/nojyerac/go-lib/log"
 	"github.com/nojyerac/go-lib/metrics"
-	mockhealth "github.com/nojyerac/go-lib/mocks/github.com/nojyerac/go-lib/health"
+	mockhealth "github.com/nojyerac/go-lib/mocks/health"
 	"github.com/nojyerac/go-lib/tracing"
 	. "github.com/nojyerac/go-lib/transport/http"
 	"github.com/nojyerac/go-lib/version"
@@ -22,9 +22,10 @@ var _ = BeforeSuite(func() {
 	var mp *metric.MeterProvider
 	mp, metricHandler, _ = metrics.NewMetricProvider()
 	metrics.SetGlobal(mp)
-	tracing.SetGlobal(tracing.NewTracerProvider(&tracing.Configuration{
+	tp, _ := tracing.NewTracerProvider(&tracing.Configuration{
 		ExporterType: "noop",
-	}))
+	})
+	tracing.SetGlobal(tp)
 })
 
 var _ = Describe("server", func() {
