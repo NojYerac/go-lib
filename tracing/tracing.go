@@ -35,12 +35,12 @@ func (*noopStarter) Shutdown(_ context.Context) error {
 type Configuration struct {
 	ExporterType string  `config:"exporter_type" validate:"oneof=stdout file otlp_http otlp_grpc noop"`
 	FilePath     string  `config:"file_path" validate:"required_if=ExporterType file"`
-	OtlpEndpoint string  `config:"otlp_endpoint" validate:"required_if=ExporterType otlp_http otlp_grpc,omitempty,hostname_port"`
+	OtlpEndpoint string  `config:"otlp_endpoint" validate:"required_if=ExporterType otlp_http otlp_grpc,omitempty,hostname_port"` //nolint:lll // struct tags must be on one line
 	SampleRatio  float64 `config:"sample_ratio" validate:"gte=0,lte=1"`
 }
 
 func NewTracerProvider(config *Configuration) (trace.TracerProvider, Starter) {
-	opts := []sdktrace.TracerProviderOption{}
+	var opts []sdktrace.TracerProviderOption
 	var starter Starter = &noopStarter{}
 	switch config.ExporterType {
 	case "stdout":
