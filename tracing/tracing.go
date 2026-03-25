@@ -87,7 +87,7 @@ func httpTracerProviderOpts(config *Configuration) ([]sdktrace.TracerProviderOpt
 		sdktrace.WithSampler(sdktrace.ParentBased(
 			sdktrace.TraceIDRatioBased(config.SampleRatio),
 		)),
-		sdktrace.WithBatcher(exporter),
+		sdktrace.WithSyncer(exporter),
 	}, exporter
 }
 

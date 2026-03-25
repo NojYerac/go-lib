@@ -1,6 +1,7 @@
 package tracing_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -21,10 +22,12 @@ var _ = Describe("", func() {
 	})
 	Describe("otlp", func() {
 		var (
-			srv *http.Server
+			srv  *http.Server
+			buff *bytes.Buffer
 		)
 		BeforeEach(func() {
-			srv = mockOtlpSrv(port)
+			buff = bytes.NewBuffer(make([]byte, 0, 2048<<2))
+			srv = mockOtlpSrv(port, buff)
 			go func() {
 				defer GinkgoRecover()
 				if err := srv.ListenAndServe(); err != nil {
@@ -33,6 +36,7 @@ var _ = Describe("", func() {
 			}()
 		})
 		AfterEach(func() {
+			buff.Reset()
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			srv.Shutdown(ctx)
@@ -50,32 +54,39 @@ var _ = Describe("", func() {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				tp, starter := tracing.NewTracerProvider(&tracing.Configuration{
-					ExporterType: "otlp",
+					ExporterType: "otlp_http",
 					OtlpEndpoint: "localhost:9999",
 					SampleRatio:  1,
 				})
 				starter.Start(ctx)
 				tracer := tp.Tracer("tracing-test")
-				ctx1, span1 := tracer.Start(ctx, "span1")
-				_, span2 := tracer.Start(ctx1, "span2")
-				span2.End()
-				span1.End()
-				time.Sleep(time.Second)
+				for i := 0; i < 512; i++ {
+					ctx1, span1 := tracer.Start(ctx, "span1")
+					_, span2 := tracer.Start(ctx1, "span2")
+					span2.End()
+					span1.End()
+				}
+				time.Sleep(100 * time.Millisecond)
 				err := starter.Shutdown(ctx)
 				Expect(err).NotTo(HaveOccurred())
-				time.Sleep(time.Second)
+				Expect(buff.String()).To(And(
+					ContainSubstring("User-Agent:[OTel OTLP Exporter"),
+					ContainSubstring("Content-Type:[application/x-protobuf]"),
+					ContainSubstring("unknown_service:tracing.test"),
+					ContainSubstring("span1"),
+				))
 			})
 		})
 	})
 })
 
-func mockOtlpSrv(port string) *http.Server {
+func mockOtlpSrv(port string, buff *bytes.Buffer) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("received request: %+v\n", r)
+		fmt.Fprintf(buff, "received request: %+v\n", r)
 		bodyBytes, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
-		fmt.Printf("body: %s", string(bodyBytes))
+		fmt.Fprintf(buff, "body: %s\n", string(bodyBytes))
 		_, _ = w.Write([]byte("ok"))
 	})
 	return &http.Server{

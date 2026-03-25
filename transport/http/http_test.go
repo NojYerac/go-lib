@@ -7,7 +7,7 @@ import (
 
 	"github.com/nojyerac/go-lib/log"
 	"github.com/nojyerac/go-lib/metrics"
-	mockhealth "github.com/nojyerac/go-lib/mocks/github.com/nojyerac/go-lib/health"
+	mockhealth "github.com/nojyerac/go-lib/mocks/health"
 	"github.com/nojyerac/go-lib/tracing"
 	. "github.com/nojyerac/go-lib/transport/http"
 	"github.com/nojyerac/go-lib/version"
